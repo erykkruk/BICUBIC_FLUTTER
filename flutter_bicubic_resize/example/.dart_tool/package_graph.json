@@ -60,8 +60,7 @@
       "version": "1.0.0",
       "dependencies": [
         "ffi",
-        "flutter",
-        "image"
+        "flutter"
       ]
     },
     {
@@ -234,15 +233,6 @@
       ]
     },
     {
-      "name": "image",
-      "version": "4.6.0",
-      "dependencies": [
-        "archive",
-        "meta",
-        "xml"
-      ]
-    },
-    {
       "name": "ffi",
       "version": "2.1.4",
       "dependencies": []
@@ -408,24 +398,6 @@
       ]
     },
     {
-      "name": "xml",
-      "version": "6.6.1",
-      "dependencies": [
-        "collection",
-        "meta",
-        "petitparser"
-      ]
-    },
-    {
-      "name": "archive",
-      "version": "4.0.7",
-      "dependencies": [
-        "crypto",
-        "path",
-        "posix"
-      ]
-    },
-    {
       "name": "vm_service",
       "version": "15.0.2",
       "dependencies": []
@@ -437,30 +409,6 @@
         "collection",
         "source_span",
         "string_scanner",
-        "typed_data"
-      ]
-    },
-    {
-      "name": "petitparser",
-      "version": "7.0.1",
-      "dependencies": [
-        "collection",
-        "meta"
-      ]
-    },
-    {
-      "name": "posix",
-      "version": "6.0.3",
-      "dependencies": [
-        "ffi",
-        "meta",
-        "path"
-      ]
-    },
-    {
-      "name": "crypto",
-      "version": "3.0.7",
-      "dependencies": [
         "typed_data"
       ]
     },

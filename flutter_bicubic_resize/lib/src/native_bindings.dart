@@ -1,7 +1,10 @@
 import 'dart:ffi';
 import 'dart:io';
 
-// C function signatures
+// ============================================================================
+// C function signatures - Raw pixel resize
+// ============================================================================
+
 typedef BicubicResizeRgbNative = Int32 Function(
   Pointer<Uint8> input,
   Int32 inputWidth,
@@ -38,13 +41,75 @@ typedef BicubicResizeRgbaDart = int Function(
   int outputHeight,
 );
 
+// ============================================================================
+// C function signatures - JPEG/PNG resize
+// ============================================================================
+
+typedef BicubicResizeJpegNative = Int32 Function(
+  Pointer<Uint8> inputData,
+  Int32 inputSize,
+  Int32 outputWidth,
+  Int32 outputHeight,
+  Int32 quality,
+  Pointer<Pointer<Uint8>> outputData,
+  Pointer<Int32> outputSize,
+);
+
+typedef BicubicResizeJpegDart = int Function(
+  Pointer<Uint8> inputData,
+  int inputSize,
+  int outputWidth,
+  int outputHeight,
+  int quality,
+  Pointer<Pointer<Uint8>> outputData,
+  Pointer<Int32> outputSize,
+);
+
+typedef BicubicResizePngNative = Int32 Function(
+  Pointer<Uint8> inputData,
+  Int32 inputSize,
+  Int32 outputWidth,
+  Int32 outputHeight,
+  Pointer<Pointer<Uint8>> outputData,
+  Pointer<Int32> outputSize,
+);
+
+typedef BicubicResizePngDart = int Function(
+  Pointer<Uint8> inputData,
+  int inputSize,
+  int outputWidth,
+  int outputHeight,
+  Pointer<Pointer<Uint8>> outputData,
+  Pointer<Int32> outputSize,
+);
+
+// ============================================================================
+// C function signatures - Memory management
+// ============================================================================
+
+typedef FreeBufferNative = Void Function(Pointer<Uint8> buffer);
+typedef FreeBufferDart = void Function(Pointer<Uint8> buffer);
+
+// ============================================================================
+// Native bindings class
+// ============================================================================
+
 class NativeBindings {
   static NativeBindings? _instance;
   static NativeBindings get instance => _instance ??= NativeBindings._();
 
   late final DynamicLibrary _library;
+
+  // Raw pixel resize
   late final BicubicResizeRgbDart bicubicResizeRgb;
   late final BicubicResizeRgbaDart bicubicResizeRgba;
+
+  // JPEG/PNG resize
+  late final BicubicResizeJpegDart bicubicResizeJpeg;
+  late final BicubicResizePngDart bicubicResizePng;
+
+  // Memory management
+  late final FreeBufferDart freeBuffer;
 
   NativeBindings._() {
     _library = _loadLibrary();
@@ -57,7 +122,6 @@ class NativeBindings {
     } else if (Platform.isIOS) {
       return DynamicLibrary.process();
     } else if (Platform.isMacOS) {
-      // For macOS development/testing
       return DynamicLibrary.process();
     } else if (Platform.isLinux) {
       return DynamicLibrary.open('libflutter_bicubic_resize.so');
@@ -69,6 +133,7 @@ class NativeBindings {
   }
 
   void _bindFunctions() {
+    // Raw pixel resize
     bicubicResizeRgb = _library
         .lookup<NativeFunction<BicubicResizeRgbNative>>('bicubic_resize_rgb')
         .asFunction<BicubicResizeRgbDart>();
@@ -76,5 +141,19 @@ class NativeBindings {
     bicubicResizeRgba = _library
         .lookup<NativeFunction<BicubicResizeRgbaNative>>('bicubic_resize_rgba')
         .asFunction<BicubicResizeRgbaDart>();
+
+    // JPEG/PNG resize
+    bicubicResizeJpeg = _library
+        .lookup<NativeFunction<BicubicResizeJpegNative>>('bicubic_resize_jpeg')
+        .asFunction<BicubicResizeJpegDart>();
+
+    bicubicResizePng = _library
+        .lookup<NativeFunction<BicubicResizePngNative>>('bicubic_resize_png')
+        .asFunction<BicubicResizePngDart>();
+
+    // Memory management
+    freeBuffer = _library
+        .lookup<NativeFunction<FreeBufferNative>>('free_buffer')
+        .asFunction<FreeBufferDart>();
   }
 }

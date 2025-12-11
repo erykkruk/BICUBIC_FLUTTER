@@ -63,7 +63,8 @@ class _ResizeDemoState extends State<ResizeDemo> {
     final stopwatch = Stopwatch()..start();
 
     try {
-      final resized = await BicubicResizer.resizeJpeg(
+      // Native resize is synchronous but very fast
+      final resized = BicubicResizer.resizeJpeg(
         jpegBytes: _originalBytes!,
         outputWidth: _outputWidth,
         outputHeight: _outputHeight,

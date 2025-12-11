@@ -2,12 +2,6 @@
   "configVersion": 2,
   "packages": [
     {
-      "name": "archive",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/archive-4.0.7",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "async",
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/async-2.13.0",
       "packageUri": "lib/",
@@ -42,12 +36,6 @@
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/cross_file-0.3.5+1",
       "packageUri": "lib/",
       "languageVersion": "3.8"
-    },
-    {
-      "name": "crypto",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/crypto-3.0.7",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
     },
     {
       "name": "fake_async",
@@ -132,12 +120,6 @@
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/http_parser-4.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
-    },
-    {
-      "name": "image",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/image-4.6.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
     },
     {
       "name": "image_picker",
@@ -242,20 +224,8 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "petitparser",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/petitparser-7.0.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.8"
-    },
-    {
       "name": "plugin_platform_interface",
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "posix",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/posix-6.0.3",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -324,12 +294,6 @@
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/web-1.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
-    },
-    {
-      "name": "xml",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/xml-6.6.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.8"
     },
     {
       "name": "flutter_bicubic_resize_example",

@@ -4,12 +4,13 @@ Fast, consistent bicubic image resizing for Flutter.
 
 ## Features
 
-- Native C performance (stb_image_resize)
+- 100% Native C performance (stb_image + stb_image_resize + stb_image_write)
 - Identical results on iOS and Android
 - Bicubic interpolation (Cubic B-Spline)
+- Full native pipeline: decode -> resize -> encode (no Dart image libraries)
 - RGB and RGBA support
-- Runs in isolate (non-blocking)
-- Supports JPEG and PNG encoding/decoding
+- JPEG and PNG support with alpha channel preservation
+- Zero external Dart dependencies (only `ffi`)
 
 ## Installation
 
@@ -24,12 +25,12 @@ dependencies:
 
 ## Usage
 
-### Resize JPEG (async, recommended)
+### Resize JPEG
 
 ```dart
 import 'package:flutter_bicubic_resize/flutter_bicubic_resize.dart';
 
-final resized = await BicubicResizer.resizeJpeg(
+final resized = BicubicResizer.resizeJpeg(
   jpegBytes: originalBytes,
   outputWidth: 224,
   outputHeight: 224,
@@ -37,17 +38,17 @@ final resized = await BicubicResizer.resizeJpeg(
 );
 ```
 
-### Resize PNG (async)
+### Resize PNG
 
 ```dart
-final resized = await BicubicResizer.resizePng(
+final resized = BicubicResizer.resizePng(
   pngBytes: originalBytes,
   outputWidth: 224,
   outputHeight: 224,
 );
 ```
 
-### Resize raw RGB/RGBA bytes (sync)
+### Resize raw RGB/RGBA bytes
 
 ```dart
 // RGB (3 bytes per pixel)
@@ -77,13 +78,27 @@ Default platform APIs use different algorithms:
 
 This package uses the **same C code** on both platforms, ensuring **identical output** for the same input.
 
+## Architecture
+
+The entire image processing pipeline runs in native C code:
+
+1. **Decode** - stb_image decodes JPEG/PNG to raw pixels
+2. **Resize** - stb_image_resize2 applies bicubic interpolation
+3. **Encode** - stb_image_write encodes back to JPEG/PNG
+
+This means:
+- No Dart image libraries needed
+- Minimal memory overhead
+- Maximum performance
+- Consistent results across platforms
+
 ## Algorithm
 
 Uses [stb_image_resize2](https://github.com/nothings/stb) with `STBIR_FILTER_CUBICBSPLINE` (standard Bicubic B-Spline interpolation).
 
 ## Performance
 
-The native C implementation is significantly faster than pure Dart solutions. The async methods (`resizeJpeg`, `resizePng`) run in an isolate to avoid blocking the UI thread.
+The entire pipeline is native C, making it significantly faster than pure Dart solutions. Operations are synchronous but very fast due to native performance.
 
 ## Requirements
 

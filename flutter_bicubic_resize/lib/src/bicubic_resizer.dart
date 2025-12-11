@@ -2,12 +2,14 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:image/image.dart' as img;
 
 import 'native_bindings.dart';
-import 'resize_isolate.dart';
 
 class BicubicResizer {
+  // ============================================================================
+  // Raw pixel resize (sync)
+  // ============================================================================
+
   /// Resize raw RGB bytes using bicubic interpolation
   ///
   /// [input] - Raw RGB pixel data (3 bytes per pixel)
@@ -108,173 +110,123 @@ class BicubicResizer {
     }
   }
 
+  // ============================================================================
+  // JPEG resize (full native pipeline)
+  // ============================================================================
+
   /// Resize JPEG image bytes using bicubic interpolation
+  ///
+  /// Entire pipeline (decode -> resize -> encode) runs in native C code.
+  /// This is synchronous but very fast due to native performance.
   ///
   /// [jpegBytes] - JPEG encoded image data
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
-  /// [quality] - JPEG output quality (0-100, default 95)
+  /// [quality] - JPEG output quality (1-100, default 95)
   ///
   /// Returns resized JPEG encoded data
-  static Future<Uint8List> resizeJpeg({
+  static Uint8List resizeJpeg({
     required Uint8List jpegBytes,
     required int outputWidth,
     required int outputHeight,
     int quality = 95,
-  }) async {
-    return ResizeIsolate.resizeJpeg(
-      jpegBytes: jpegBytes,
-      outputWidth: outputWidth,
-      outputHeight: outputHeight,
-      quality: quality,
-    );
+  }) {
+    final inputPtr = calloc<Uint8>(jpegBytes.length);
+    final outputDataPtr = calloc<Pointer<Uint8>>();
+    final outputSizePtr = calloc<Int32>();
+
+    try {
+      inputPtr.asTypedList(jpegBytes.length).setAll(0, jpegBytes);
+
+      final result = NativeBindings.instance.bicubicResizeJpeg(
+        inputPtr,
+        jpegBytes.length,
+        outputWidth,
+        outputHeight,
+        quality,
+        outputDataPtr,
+        outputSizePtr,
+      );
+
+      if (result != 0) {
+        throw Exception('Native JPEG resize failed with code: $result');
+      }
+
+      final outputData = outputDataPtr.value;
+      final outputSize = outputSizePtr.value;
+
+      // Copy data before freeing native buffer
+      final resultBytes = Uint8List.fromList(
+        outputData.asTypedList(outputSize),
+      );
+
+      // Free the native-allocated buffer
+      NativeBindings.instance.freeBuffer(outputData);
+
+      return resultBytes;
+    } finally {
+      calloc.free(inputPtr);
+      calloc.free(outputDataPtr);
+      calloc.free(outputSizePtr);
+    }
   }
 
+  // ============================================================================
+  // PNG resize (full native pipeline)
+  // ============================================================================
+
   /// Resize PNG image bytes using bicubic interpolation
+  ///
+  /// Entire pipeline (decode -> resize -> encode) runs in native C code.
+  /// Preserves alpha channel if present.
+  /// This is synchronous but very fast due to native performance.
   ///
   /// [pngBytes] - PNG encoded image data
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
   ///
   /// Returns resized PNG encoded data
-  static Future<Uint8List> resizePng({
-    required Uint8List pngBytes,
-    required int outputWidth,
-    required int outputHeight,
-  }) async {
-    return ResizeIsolate.resizePng(
-      pngBytes: pngBytes,
-      outputWidth: outputWidth,
-      outputHeight: outputHeight,
-    );
-  }
-
-  /// Synchronous version of resizeJpeg (blocks UI thread - use with caution)
-  static Uint8List resizeJpegSync({
-    required Uint8List jpegBytes,
-    required int outputWidth,
-    required int outputHeight,
-    int quality = 95,
-  }) {
-    final decoded = img.decodeJpg(jpegBytes);
-    if (decoded == null) {
-      throw Exception('Failed to decode JPEG');
-    }
-
-    final rgbBytes = _imageToRgb(decoded);
-    final resizedRgb = resizeRgb(
-      input: rgbBytes,
-      inputWidth: decoded.width,
-      inputHeight: decoded.height,
-      outputWidth: outputWidth,
-      outputHeight: outputHeight,
-    );
-
-    final resizedImage = img.Image(
-      width: outputWidth,
-      height: outputHeight,
-      numChannels: 3,
-    );
-    _rgbToImage(resizedRgb, resizedImage);
-
-    return Uint8List.fromList(img.encodeJpg(resizedImage, quality: quality));
-  }
-
-  /// Synchronous version of resizePng (blocks UI thread - use with caution)
-  static Uint8List resizePngSync({
+  static Uint8List resizePng({
     required Uint8List pngBytes,
     required int outputWidth,
     required int outputHeight,
   }) {
-    final decoded = img.decodePng(pngBytes);
-    if (decoded == null) {
-      throw Exception('Failed to decode PNG');
-    }
+    final inputPtr = calloc<Uint8>(pngBytes.length);
+    final outputDataPtr = calloc<Pointer<Uint8>>();
+    final outputSizePtr = calloc<Int32>();
 
-    final hasAlpha = decoded.numChannels == 4;
+    try {
+      inputPtr.asTypedList(pngBytes.length).setAll(0, pngBytes);
 
-    if (hasAlpha) {
-      final rgbaBytes = _imageToRgba(decoded);
-      final resizedRgba = resizeRgba(
-        input: rgbaBytes,
-        inputWidth: decoded.width,
-        inputHeight: decoded.height,
-        outputWidth: outputWidth,
-        outputHeight: outputHeight,
+      final result = NativeBindings.instance.bicubicResizePng(
+        inputPtr,
+        pngBytes.length,
+        outputWidth,
+        outputHeight,
+        outputDataPtr,
+        outputSizePtr,
       );
 
-      final resizedImage = img.Image(
-        width: outputWidth,
-        height: outputHeight,
-        numChannels: 4,
-      );
-      _rgbaToImage(resizedRgba, resizedImage);
+      if (result != 0) {
+        throw Exception('Native PNG resize failed with code: $result');
+      }
 
-      return Uint8List.fromList(img.encodePng(resizedImage));
-    } else {
-      final rgbBytes = _imageToRgb(decoded);
-      final resizedRgb = resizeRgb(
-        input: rgbBytes,
-        inputWidth: decoded.width,
-        inputHeight: decoded.height,
-        outputWidth: outputWidth,
-        outputHeight: outputHeight,
+      final outputData = outputDataPtr.value;
+      final outputSize = outputSizePtr.value;
+
+      // Copy data before freeing native buffer
+      final resultBytes = Uint8List.fromList(
+        outputData.asTypedList(outputSize),
       );
 
-      final resizedImage = img.Image(
-        width: outputWidth,
-        height: outputHeight,
-        numChannels: 3,
-      );
-      _rgbToImage(resizedRgb, resizedImage);
+      // Free the native-allocated buffer
+      NativeBindings.instance.freeBuffer(outputData);
 
-      return Uint8List.fromList(img.encodePng(resizedImage));
-    }
-  }
-
-  /// Convert img.Image to raw RGB bytes
-  static Uint8List _imageToRgb(img.Image image) {
-    final bytes = Uint8List(image.width * image.height * 3);
-    var i = 0;
-    for (final pixel in image) {
-      bytes[i++] = pixel.r.toInt();
-      bytes[i++] = pixel.g.toInt();
-      bytes[i++] = pixel.b.toInt();
-    }
-    return bytes;
-  }
-
-  /// Convert img.Image to raw RGBA bytes
-  static Uint8List _imageToRgba(img.Image image) {
-    final bytes = Uint8List(image.width * image.height * 4);
-    var i = 0;
-    for (final pixel in image) {
-      bytes[i++] = pixel.r.toInt();
-      bytes[i++] = pixel.g.toInt();
-      bytes[i++] = pixel.b.toInt();
-      bytes[i++] = pixel.a.toInt();
-    }
-    return bytes;
-  }
-
-  /// Convert raw RGB bytes to img.Image
-  static void _rgbToImage(Uint8List rgb, img.Image image) {
-    var i = 0;
-    for (final pixel in image) {
-      pixel.r = rgb[i++];
-      pixel.g = rgb[i++];
-      pixel.b = rgb[i++];
-    }
-  }
-
-  /// Convert raw RGBA bytes to img.Image
-  static void _rgbaToImage(Uint8List rgba, img.Image image) {
-    var i = 0;
-    for (final pixel in image) {
-      pixel.r = rgba[i++];
-      pixel.g = rgba[i++];
-      pixel.b = rgba[i++];
-      pixel.a = rgba[i++];
+      return resultBytes;
+    } finally {
+      calloc.free(inputPtr);
+      calloc.free(outputDataPtr);
+      calloc.free(outputSizePtr);
     }
   }
 }

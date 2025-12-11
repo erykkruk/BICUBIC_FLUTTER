@@ -2,12 +2,6 @@
   "configVersion": 2,
   "packages": [
     {
-      "name": "archive",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/archive-4.0.7",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "async",
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/async-2.13.0",
       "packageUri": "lib/",
@@ -34,12 +28,6 @@
     {
       "name": "collection",
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/collection-1.19.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "crypto",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/crypto-3.0.7",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -72,12 +60,6 @@
       "rootUri": "file:///Users/erykkruk/fvm/versions/stable/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.8"
-    },
-    {
-      "name": "image",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/image-4.6.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
     },
     {
       "name": "leak_tracker",
@@ -128,18 +110,6 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "petitparser",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/petitparser-7.0.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.8"
-    },
-    {
-      "name": "posix",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/posix-6.0.3",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "sky_engine",
       "rootUri": "file:///Users/erykkruk/fvm/versions/stable/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
@@ -182,12 +152,6 @@
       "languageVersion": "3.5"
     },
     {
-      "name": "typed_data",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
       "name": "vector_math",
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/vector_math-2.2.0",
       "packageUri": "lib/",
@@ -198,12 +162,6 @@
       "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/vm_service-15.0.2",
       "packageUri": "lib/",
       "languageVersion": "3.5"
-    },
-    {
-      "name": "xml",
-      "rootUri": "file:///Users/erykkruk/.pub-cache/hosted/pub.dev/xml-6.6.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.8"
     },
     {
       "name": "flutter_bicubic_resize",
