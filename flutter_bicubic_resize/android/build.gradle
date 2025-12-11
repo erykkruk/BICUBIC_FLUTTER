@@ -1,4 +1,4 @@
-group 'com.example.flutter_bicubic_resize'
+group 'tech.ravenlab.bicubic_flutter'
 version '1.0.0'
 
 buildscript {
@@ -22,7 +22,7 @@ apply plugin: 'com.android.library'
 
 android {
     if (project.android.hasProperty("namespace")) {
-        namespace 'com.example.flutter_bicubic_resize'
+        namespace 'tech.ravenlab.bicubic_flutter'
     }
 
     compileSdkVersion 33
