@@ -1,0 +1,15 @@
+# Build outputs
+build/
+.dart_tool/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Generated files
+*.g.dart
+*.freezed.dart

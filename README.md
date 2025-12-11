@@ -18,9 +18,13 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_bicubic_resize:
-    git:
-      url: https://github.com/erykkruk/flutter_bicubic_resize.git
+  flutter_bicubic_resize: ^1.0.0
+```
+
+Or run:
+
+```bash
+flutter pub add flutter_bicubic_resize
 ```
 
 ## Usage
