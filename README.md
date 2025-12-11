@@ -133,6 +133,10 @@ The entire pipeline is native C, making it significantly faster than pure Dart s
 - Android SDK 21+
 - iOS 11.0+
 
+## Sponsor
+
+**[CODIGEE.COM](https://codigee.com)**
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file.
