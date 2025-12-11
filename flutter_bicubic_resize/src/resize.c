@@ -49,7 +49,7 @@ FFI_EXPORT int bicubic_resize_rgb(
         STBIR_RGB,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CUBICBSPLINE
+        STBIR_FILTER_CATMULLROM
     );
 
     return 0;
@@ -82,7 +82,7 @@ FFI_EXPORT int bicubic_resize_rgba(
         STBIR_RGBA,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CUBICBSPLINE
+        STBIR_FILTER_CATMULLROM
     );
 
     return 0;
@@ -165,7 +165,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
         STBIR_RGB,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CUBICBSPLINE
+        STBIR_FILTER_CATMULLROM
     );
 
     stbi_image_free(src_pixels);
@@ -270,7 +270,7 @@ FFI_EXPORT int bicubic_resize_png(
         (channels == 4) ? STBIR_RGBA : STBIR_RGB,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CUBICBSPLINE
+        STBIR_FILTER_CATMULLROM
     );
 
     stbi_image_free(src_pixels);

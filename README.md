@@ -6,7 +6,7 @@ Fast, consistent bicubic image resizing for Flutter.
 
 - 100% Native C performance (stb_image + stb_image_resize + stb_image_write)
 - Identical results on iOS and Android
-- Bicubic interpolation (Cubic B-Spline)
+- Bicubic interpolation (Catmull-Rom, same as OpenCV)
 - Full native pipeline: decode -> resize -> encode (no Dart image libraries)
 - RGB and RGBA support
 - JPEG and PNG support with alpha channel preservation
@@ -94,7 +94,13 @@ This means:
 
 ## Algorithm
 
-Uses [stb_image_resize2](https://github.com/nothings/stb) with `STBIR_FILTER_CUBICBSPLINE` (standard Bicubic B-Spline interpolation).
+Uses [stb_image_resize2](https://github.com/nothings/stb) with `STBIR_FILTER_CATMULLROM` (Catmull-Rom spline).
+
+This is the same algorithm used by:
+- OpenCV `cv2.INTER_CUBIC`
+- PIL/Pillow `Image.BICUBIC`
+
+Perfect for ML preprocessing (OpenCLIP, ResNet, etc.) where consistent results with training pipeline matter.
 
 ## Performance
 
