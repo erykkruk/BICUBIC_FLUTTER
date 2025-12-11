@@ -1,7 +1,7 @@
 name: flutter_bicubic_resize
 description: Fast, consistent bicubic image resizing across iOS and Android using native C code.
 version: 1.0.0
-homepage: https://github.com/YOUR_USERNAME/flutter_bicubic_resize
+homepage: https://github.com/ravenlab/flutter_bicubic_resize
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

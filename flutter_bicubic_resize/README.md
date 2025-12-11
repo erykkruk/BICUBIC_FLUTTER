@@ -20,7 +20,7 @@ Add to your `pubspec.yaml`:
 dependencies:
   flutter_bicubic_resize:
     git:
-      url: https://github.com/YOUR_USERNAME/flutter_bicubic_resize.git
+      url: https://github.com/erykkruk/flutter_bicubic_resize.git
 ```
 
 ## Usage
