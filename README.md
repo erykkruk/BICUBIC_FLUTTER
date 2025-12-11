@@ -70,6 +70,23 @@ final resizedRgba = BicubicResizer.resizeRgba(
 );
 ```
 
+### Custom filter selection
+
+```dart
+// Use different bicubic filter
+final resized = BicubicResizer.resizeJpeg(
+  jpegBytes: originalBytes,
+  outputWidth: 224,
+  outputHeight: 224,
+  filter: BicubicFilter.mitchell, // or .cubicBSpline
+);
+```
+
+Available filters:
+- `BicubicFilter.catmullRom` - Default. Same as OpenCV/PIL. Best for ML.
+- `BicubicFilter.cubicBSpline` - Smoother, more blurry.
+- `BicubicFilter.mitchell` - Balanced between sharp and smooth.
+
 ## Why?
 
 Default platform APIs use different algorithms:

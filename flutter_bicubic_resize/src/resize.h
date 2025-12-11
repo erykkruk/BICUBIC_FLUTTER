@@ -14,10 +14,19 @@ extern "C" {
 #endif
 
 // ============================================================================
+// Filter types (matching stb_image_resize2 filters)
+// ============================================================================
+
+#define FILTER_CATMULL_ROM   0  // OpenCV INTER_CUBIC, PIL BICUBIC (default)
+#define FILTER_CUBIC_BSPLINE 1  // Smoother, more blurry
+#define FILTER_MITCHELL      2  // Mitchell-Netravali (balanced)
+
+// ============================================================================
 // Raw pixel data resize functions
 // ============================================================================
 
-// Resize RGB image using Bicubic interpolation
+// Resize RGB image using specified filter
+// filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_rgb(
     const uint8_t* input,
@@ -25,10 +34,12 @@ FFI_EXPORT int bicubic_resize_rgb(
     int input_height,
     uint8_t* output,
     int output_width,
-    int output_height
+    int output_height,
+    int filter
 );
 
-// Resize RGBA image using Bicubic interpolation
+// Resize RGBA image using specified filter
+// filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_rgba(
     const uint8_t* input,
@@ -36,20 +47,17 @@ FFI_EXPORT int bicubic_resize_rgba(
     int input_height,
     uint8_t* output,
     int output_width,
-    int output_height
+    int output_height,
+    int filter
 );
 
 // ============================================================================
 // JPEG resize functions (decode -> resize -> encode)
 // ============================================================================
 
-// Resize JPEG image using Bicubic interpolation
-// input_data: JPEG file bytes
-// input_size: size of input JPEG in bytes
-// output_width, output_height: target dimensions
+// Resize JPEG image
+// filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
 // quality: JPEG quality 1-100
-// output_data: pointer to receive allocated output buffer (caller must free with free_buffer)
-// output_size: pointer to receive output size
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_jpeg(
     const uint8_t* input_data,
@@ -57,6 +65,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
     int output_width,
     int output_height,
     int quality,
+    int filter,
     uint8_t** output_data,
     int* output_size
 );
@@ -65,18 +74,15 @@ FFI_EXPORT int bicubic_resize_jpeg(
 // PNG resize functions (decode -> resize -> encode)
 // ============================================================================
 
-// Resize PNG image using Bicubic interpolation
-// input_data: PNG file bytes
-// input_size: size of input PNG in bytes
-// output_width, output_height: target dimensions
-// output_data: pointer to receive allocated output buffer (caller must free with free_buffer)
-// output_size: pointer to receive output size
+// Resize PNG image
+// filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_png(
     const uint8_t* input_data,
     int input_size,
     int output_width,
     int output_height,
+    int filter,
     uint8_t** output_data,
     int* output_size
 );

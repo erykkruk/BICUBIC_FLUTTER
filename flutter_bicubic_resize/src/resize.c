@@ -19,6 +19,22 @@
 #include <string.h>
 
 // ============================================================================
+// Helper: convert filter enum to stbir filter
+// ============================================================================
+
+static stbir_filter get_stbir_filter(int filter) {
+    switch (filter) {
+        case FILTER_CUBIC_BSPLINE:
+            return STBIR_FILTER_CUBICBSPLINE;
+        case FILTER_MITCHELL:
+            return STBIR_FILTER_MITCHELL;
+        case FILTER_CATMULL_ROM:
+        default:
+            return STBIR_FILTER_CATMULLROM;
+    }
+}
+
+// ============================================================================
 // Raw pixel data resize functions
 // ============================================================================
 
@@ -28,7 +44,8 @@ FFI_EXPORT int bicubic_resize_rgb(
     int input_height,
     uint8_t* output,
     int output_width,
-    int output_height
+    int output_height,
+    int filter
 ) {
     if (input == NULL || output == NULL) {
         return -1;
@@ -49,7 +66,7 @@ FFI_EXPORT int bicubic_resize_rgb(
         STBIR_RGB,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CATMULLROM
+        get_stbir_filter(filter)
     );
 
     return 0;
@@ -61,7 +78,8 @@ FFI_EXPORT int bicubic_resize_rgba(
     int input_height,
     uint8_t* output,
     int output_width,
-    int output_height
+    int output_height,
+    int filter
 ) {
     if (input == NULL || output == NULL) {
         return -1;
@@ -82,7 +100,7 @@ FFI_EXPORT int bicubic_resize_rgba(
         STBIR_RGBA,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CATMULLROM
+        get_stbir_filter(filter)
     );
 
     return 0;
@@ -121,6 +139,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
     int output_width,
     int output_height,
     int quality,
+    int filter,
     uint8_t** output_data,
     int* output_size
 ) {
@@ -152,7 +171,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
         return -1;
     }
 
-    // Resize using bicubic
+    // Resize using selected filter
     stbir_resize(
         src_pixels,
         src_width,
@@ -165,7 +184,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
         STBIR_RGB,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CATMULLROM
+        get_stbir_filter(filter)
     );
 
     stbi_image_free(src_pixels);
@@ -210,6 +229,7 @@ FFI_EXPORT int bicubic_resize_png(
     int input_size,
     int output_width,
     int output_height,
+    int filter,
     uint8_t** output_data,
     int* output_size
 ) {
@@ -236,7 +256,6 @@ FFI_EXPORT int bicubic_resize_png(
     int channels = (src_channels >= 4) ? 4 : 3;
 
     // If we need to convert to RGBA
-    uint8_t* src_rgba = NULL;
     if (src_channels != channels) {
         // Reload with desired channel count
         stbi_image_free(src_pixels);
@@ -257,7 +276,7 @@ FFI_EXPORT int bicubic_resize_png(
         return -1;
     }
 
-    // Resize using bicubic
+    // Resize using selected filter
     stbir_resize(
         src_pixels,
         src_width,
@@ -270,7 +289,7 @@ FFI_EXPORT int bicubic_resize_png(
         (channels == 4) ? STBIR_RGBA : STBIR_RGB,
         STBIR_TYPE_UINT8,
         STBIR_EDGE_CLAMP,
-        STBIR_FILTER_CATMULLROM
+        get_stbir_filter(filter)
     );
 
     stbi_image_free(src_pixels);

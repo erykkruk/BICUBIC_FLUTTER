@@ -5,6 +5,22 @@ import 'package:ffi/ffi.dart';
 
 import 'native_bindings.dart';
 
+/// Available bicubic filter types
+enum BicubicFilter {
+  /// Catmull-Rom spline (same as OpenCV INTER_CUBIC, PIL BICUBIC)
+  /// Best for ML preprocessing. Default.
+  catmullRom(0),
+
+  /// Cubic B-Spline (smoother, more blurry)
+  cubicBSpline(1),
+
+  /// Mitchell-Netravali (balanced between sharp and smooth)
+  mitchell(2);
+
+  final int value;
+  const BicubicFilter(this.value);
+}
+
 class BicubicResizer {
   // ============================================================================
   // Raw pixel resize (sync)
@@ -17,6 +33,7 @@ class BicubicResizer {
   /// [inputHeight] - Height of input image in pixels
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
+  /// [filter] - Bicubic filter type (default: Catmull-Rom)
   ///
   /// Returns resized RGB pixel data
   static Uint8List resizeRgb({
@@ -25,6 +42,7 @@ class BicubicResizer {
     required int inputHeight,
     required int outputWidth,
     required int outputHeight,
+    BicubicFilter filter = BicubicFilter.catmullRom,
   }) {
     final expectedInputSize = inputWidth * inputHeight * 3;
     if (input.length != expectedInputSize) {
@@ -47,6 +65,7 @@ class BicubicResizer {
         outputPtr,
         outputWidth,
         outputHeight,
+        filter.value,
       );
 
       if (result != 0) {
@@ -67,6 +86,7 @@ class BicubicResizer {
   /// [inputHeight] - Height of input image in pixels
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
+  /// [filter] - Bicubic filter type (default: Catmull-Rom)
   ///
   /// Returns resized RGBA pixel data
   static Uint8List resizeRgba({
@@ -75,6 +95,7 @@ class BicubicResizer {
     required int inputHeight,
     required int outputWidth,
     required int outputHeight,
+    BicubicFilter filter = BicubicFilter.catmullRom,
   }) {
     final expectedInputSize = inputWidth * inputHeight * 4;
     if (input.length != expectedInputSize) {
@@ -97,6 +118,7 @@ class BicubicResizer {
         outputPtr,
         outputWidth,
         outputHeight,
+        filter.value,
       );
 
       if (result != 0) {
@@ -123,6 +145,7 @@ class BicubicResizer {
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
   /// [quality] - JPEG output quality (1-100, default 95)
+  /// [filter] - Bicubic filter type (default: Catmull-Rom)
   ///
   /// Returns resized JPEG encoded data
   static Uint8List resizeJpeg({
@@ -130,6 +153,7 @@ class BicubicResizer {
     required int outputWidth,
     required int outputHeight,
     int quality = 95,
+    BicubicFilter filter = BicubicFilter.catmullRom,
   }) {
     final inputPtr = calloc<Uint8>(jpegBytes.length);
     final outputDataPtr = calloc<Pointer<Uint8>>();
@@ -144,6 +168,7 @@ class BicubicResizer {
         outputWidth,
         outputHeight,
         quality,
+        filter.value,
         outputDataPtr,
         outputSizePtr,
       );
@@ -184,12 +209,14 @@ class BicubicResizer {
   /// [pngBytes] - PNG encoded image data
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
+  /// [filter] - Bicubic filter type (default: Catmull-Rom)
   ///
   /// Returns resized PNG encoded data
   static Uint8List resizePng({
     required Uint8List pngBytes,
     required int outputWidth,
     required int outputHeight,
+    BicubicFilter filter = BicubicFilter.catmullRom,
   }) {
     final inputPtr = calloc<Uint8>(pngBytes.length);
     final outputDataPtr = calloc<Pointer<Uint8>>();
@@ -203,6 +230,7 @@ class BicubicResizer {
         pngBytes.length,
         outputWidth,
         outputHeight,
+        filter.value,
         outputDataPtr,
         outputSizePtr,
       );
