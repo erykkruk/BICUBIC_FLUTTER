@@ -1,9 +1,20 @@
 name: flutter_bicubic_resize
 description: Fast, consistent bicubic image resizing across iOS and Android using native C code with Catmull-Rom interpolation.
 version: 1.0.0
-homepage: https://github.com/erykkruk/flutter_bicubic_resize
-repository: https://github.com/erykkruk/flutter_bicubic_resize
-issue_tracker: https://github.com/erykkruk/flutter_bicubic_resize/issues
+homepage: https://github.com/erykkruk/BICUBIC_FLUTTER
+repository: https://github.com/erykkruk/BICUBIC_FLUTTER
+issue_tracker: https://github.com/erykkruk/BICUBIC_FLUTTER/issues
+documentation: https://github.com/erykkruk/BICUBIC_FLUTTER/blob/main/doc/api.md
+
+topics:
+  - image
+  - resize
+  - ffi
+  - image-processing
+  - native
+
+funding:
+  - https://codigee.com
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

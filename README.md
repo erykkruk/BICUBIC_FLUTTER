@@ -137,6 +137,11 @@ The entire pipeline is native C, making it significantly faster than pure Dart s
 
 **[CODIGEE.COM](https://codigee.com)**
 
+## Documentation
+
+- [API Reference](doc/api.md) - Complete API documentation
+- [Example App](example/) - Working demo application
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file.
