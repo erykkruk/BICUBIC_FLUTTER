@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0] - 2025-12-12
+
+### Added
+- Optional center crop parameter (`crop`) for all resize methods
+- Crop value range: 0.0-1.0 (1.0 = no crop, 0.5 = center 50%)
+- Crop is applied before resize for efficient single-pass processing
+- Example app now includes crop slider for testing
+
+### Changed
+- Updated API documentation with crop parameter
+- Updated README with crop usage examples
+
 ## [1.0.1] - 2025-12-12
 
 ### Fixed
