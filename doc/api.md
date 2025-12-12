@@ -30,6 +30,7 @@ static Uint8List resizeJpeg({
   required int outputHeight,
   int quality = 95,
   BicubicFilter filter = BicubicFilter.catmullRom,
+  double crop = 1.0,
 })
 ```
 
@@ -42,6 +43,7 @@ static Uint8List resizeJpeg({
 | `outputHeight` | `int` | Yes | - | Desired output height in pixels |
 | `quality` | `int` | No | 95 | JPEG output quality (1-100) |
 | `filter` | `BicubicFilter` | No | `catmullRom` | Bicubic filter type |
+| `crop` | `double` | No | 1.0 | Center crop factor (0.0-1.0). 1.0 = no crop, 0.5 = center 50% |
 
 **Returns:** `Uint8List` - Resized JPEG encoded data.
 
@@ -55,6 +57,14 @@ final resized = BicubicResizer.resizeJpeg(
   outputWidth: 224,
   outputHeight: 224,
   quality: 95,
+);
+
+// With center crop - take center 80% before resizing
+final cropped = BicubicResizer.resizeJpeg(
+  jpegBytes: originalBytes,
+  outputWidth: 224,
+  outputHeight: 224,
+  crop: 0.8,
 );
 ```
 
@@ -70,6 +80,7 @@ static Uint8List resizePng({
   required int outputWidth,
   required int outputHeight,
   BicubicFilter filter = BicubicFilter.catmullRom,
+  double crop = 1.0,
 })
 ```
 
@@ -81,6 +92,7 @@ static Uint8List resizePng({
 | `outputWidth` | `int` | Yes | - | Desired output width in pixels |
 | `outputHeight` | `int` | Yes | - | Desired output height in pixels |
 | `filter` | `BicubicFilter` | No | `catmullRom` | Bicubic filter type |
+| `crop` | `double` | No | 1.0 | Center crop factor (0.0-1.0). 1.0 = no crop, 0.5 = center 50% |
 
 **Returns:** `Uint8List` - Resized PNG encoded data.
 
@@ -91,6 +103,14 @@ final resized = BicubicResizer.resizePng(
   pngBytes: originalBytes,
   outputWidth: 512,
   outputHeight: 512,
+);
+
+// With center crop
+final cropped = BicubicResizer.resizePng(
+  pngBytes: originalBytes,
+  outputWidth: 512,
+  outputHeight: 512,
+  crop: 0.7, // Take center 70%
 );
 ```
 
@@ -108,6 +128,7 @@ static Uint8List resizeRgb({
   required int outputWidth,
   required int outputHeight,
   BicubicFilter filter = BicubicFilter.catmullRom,
+  double crop = 1.0,
 })
 ```
 
@@ -121,6 +142,7 @@ static Uint8List resizeRgb({
 | `outputWidth` | `int` | Yes | - | Desired output width |
 | `outputHeight` | `int` | Yes | - | Desired output height |
 | `filter` | `BicubicFilter` | No | `catmullRom` | Bicubic filter type |
+| `crop` | `double` | No | 1.0 | Center crop factor (0.0-1.0). 1.0 = no crop, 0.5 = center 50% |
 
 **Returns:** `Uint8List` - Resized RGB pixel data.
 
@@ -135,6 +157,7 @@ final resizedRgb = BicubicResizer.resizeRgb(
   inputHeight: 1080,
   outputWidth: 224,
   outputHeight: 224,
+  crop: 0.9, // Optional center crop
 );
 ```
 
@@ -152,6 +175,7 @@ static Uint8List resizeRgba({
   required int outputWidth,
   required int outputHeight,
   BicubicFilter filter = BicubicFilter.catmullRom,
+  double crop = 1.0,
 })
 ```
 
@@ -165,6 +189,7 @@ static Uint8List resizeRgba({
 | `outputWidth` | `int` | Yes | - | Desired output width |
 | `outputHeight` | `int` | Yes | - | Desired output height |
 | `filter` | `BicubicFilter` | No | `catmullRom` | Bicubic filter type |
+| `crop` | `double` | No | 1.0 | Center crop factor (0.0-1.0). 1.0 = no crop, 0.5 = center 50% |
 
 **Returns:** `Uint8List` - Resized RGBA pixel data.
 
@@ -179,6 +204,7 @@ final resizedRgba = BicubicResizer.resizeRgba(
   inputHeight: 1080,
   outputWidth: 224,
   outputHeight: 224,
+  crop: 0.85, // Optional center crop
 );
 ```
 

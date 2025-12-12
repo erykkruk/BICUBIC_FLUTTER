@@ -19,6 +19,35 @@
 #include <string.h>
 
 // ============================================================================
+// Helper: clamp crop value to valid range
+// ============================================================================
+
+static float clamp_crop(float crop) {
+    if (crop < 0.01f) return 0.01f;  // Minimum 1%
+    if (crop > 1.0f) return 1.0f;
+    return crop;
+}
+
+// ============================================================================
+// Helper: calculate center crop parameters
+// ============================================================================
+
+static void calc_center_crop(
+    int src_width, int src_height, float crop,
+    int* crop_x, int* crop_y, int* crop_width, int* crop_height
+) {
+    crop = clamp_crop(crop);
+    *crop_width = (int)(src_width * crop);
+    *crop_height = (int)(src_height * crop);
+    *crop_x = (src_width - *crop_width) / 2;
+    *crop_y = (src_height - *crop_height) / 2;
+
+    // Ensure at least 1x1
+    if (*crop_width < 1) *crop_width = 1;
+    if (*crop_height < 1) *crop_height = 1;
+}
+
+// ============================================================================
 // Helper: convert filter enum to stbir filter
 // ============================================================================
 
@@ -45,7 +74,8 @@ FFI_EXPORT int bicubic_resize_rgb(
     uint8_t* output,
     int output_width,
     int output_height,
-    int filter
+    int filter,
+    float crop
 ) {
     if (input == NULL || output == NULL) {
         return -1;
@@ -54,11 +84,18 @@ FFI_EXPORT int bicubic_resize_rgb(
         return -1;
     }
 
+    // Calculate center crop region
+    int crop_x, crop_y, crop_width, crop_height;
+    calc_center_crop(input_width, input_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+
+    // Get pointer to start of cropped region
+    const uint8_t* crop_start = input + (crop_y * input_width + crop_x) * 3;
+
     stbir_resize(
-        input,
-        input_width,
-        input_height,
-        input_width * 3,
+        crop_start,
+        crop_width,
+        crop_height,
+        input_width * 3,  // Original stride (not cropped width)
         output,
         output_width,
         output_height,
@@ -79,7 +116,8 @@ FFI_EXPORT int bicubic_resize_rgba(
     uint8_t* output,
     int output_width,
     int output_height,
-    int filter
+    int filter,
+    float crop
 ) {
     if (input == NULL || output == NULL) {
         return -1;
@@ -88,11 +126,18 @@ FFI_EXPORT int bicubic_resize_rgba(
         return -1;
     }
 
+    // Calculate center crop region
+    int crop_x, crop_y, crop_width, crop_height;
+    calc_center_crop(input_width, input_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+
+    // Get pointer to start of cropped region
+    const uint8_t* crop_start = input + (crop_y * input_width + crop_x) * 4;
+
     stbir_resize(
-        input,
-        input_width,
-        input_height,
-        input_width * 4,
+        crop_start,
+        crop_width,
+        crop_height,
+        input_width * 4,  // Original stride (not cropped width)
         output,
         output_width,
         output_height,
@@ -140,6 +185,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
     int output_height,
     int quality,
     int filter,
+    float crop,
     uint8_t** output_data,
     int* output_size
 ) {
@@ -164,6 +210,13 @@ FFI_EXPORT int bicubic_resize_jpeg(
         return -1;
     }
 
+    // Calculate center crop region
+    int crop_x, crop_y, crop_width, crop_height;
+    calc_center_crop(src_width, src_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+
+    // Get pointer to start of cropped region
+    const uint8_t* crop_start = src_pixels + (crop_y * src_width + crop_x) * 3;
+
     // Allocate output pixel buffer
     uint8_t* dst_pixels = (uint8_t*)malloc(output_width * output_height * 3);
     if (dst_pixels == NULL) {
@@ -171,12 +224,12 @@ FFI_EXPORT int bicubic_resize_jpeg(
         return -1;
     }
 
-    // Resize using selected filter
+    // Resize using selected filter (from cropped region)
     stbir_resize(
-        src_pixels,
-        src_width,
-        src_height,
-        src_width * 3,
+        crop_start,
+        crop_width,
+        crop_height,
+        src_width * 3,  // Original stride
         dst_pixels,
         output_width,
         output_height,
@@ -230,6 +283,7 @@ FFI_EXPORT int bicubic_resize_png(
     int output_width,
     int output_height,
     int filter,
+    float crop,
     uint8_t** output_data,
     int* output_size
 ) {
@@ -269,6 +323,13 @@ FFI_EXPORT int bicubic_resize_png(
         }
     }
 
+    // Calculate center crop region
+    int crop_x, crop_y, crop_width, crop_height;
+    calc_center_crop(src_width, src_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+
+    // Get pointer to start of cropped region
+    const uint8_t* crop_start = src_pixels + (crop_y * src_width + crop_x) * channels;
+
     // Allocate output pixel buffer
     uint8_t* dst_pixels = (uint8_t*)malloc(output_width * output_height * channels);
     if (dst_pixels == NULL) {
@@ -276,12 +337,12 @@ FFI_EXPORT int bicubic_resize_png(
         return -1;
     }
 
-    // Resize using selected filter
+    // Resize using selected filter (from cropped region)
     stbir_resize(
-        src_pixels,
-        src_width,
-        src_height,
-        src_width * channels,
+        crop_start,
+        crop_width,
+        crop_height,
+        src_width * channels,  // Original stride
         dst_pixels,
         output_width,
         output_height,

@@ -91,5 +91,53 @@ void main() {
       expect(inputPixels, equals(10000));
       expect(outputPixels, equals(25088));
     });
+
+    test('center crop calculations', () {
+      // Simulating center crop logic
+      const srcWidth = 100;
+      const srcHeight = 100;
+      const crop = 0.8; // 80% center crop
+
+      final cropWidth = (srcWidth * crop).toInt();
+      final cropHeight = (srcHeight * crop).toInt();
+      final cropX = (srcWidth - cropWidth) ~/ 2;
+      final cropY = (srcHeight - cropHeight) ~/ 2;
+
+      expect(cropWidth, equals(80));
+      expect(cropHeight, equals(80));
+      expect(cropX, equals(10));
+      expect(cropY, equals(10));
+    });
+
+    test('crop value boundaries', () {
+      // Test crop value clamping logic
+      double clampCrop(double crop) {
+        if (crop < 0.01) return 0.01;
+        if (crop > 1.0) return 1.0;
+        return crop;
+      }
+
+      expect(clampCrop(1.0), equals(1.0));
+      expect(clampCrop(0.5), equals(0.5));
+      expect(clampCrop(0.0), equals(0.01)); // Minimum 1%
+      expect(clampCrop(-0.5), equals(0.01));
+      expect(clampCrop(1.5), equals(1.0));
+    });
+
+    test('50% center crop dimensions', () {
+      const srcWidth = 200;
+      const srcHeight = 100;
+      const crop = 0.5; // 50% center crop
+
+      final cropWidth = (srcWidth * crop).toInt();
+      final cropHeight = (srcHeight * crop).toInt();
+      final cropX = (srcWidth - cropWidth) ~/ 2;
+      final cropY = (srcHeight - cropHeight) ~/ 2;
+
+      expect(cropWidth, equals(100));
+      expect(cropHeight, equals(50));
+      expect(cropX, equals(50));
+      expect(cropY, equals(25));
+    });
   });
 }

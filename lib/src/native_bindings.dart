@@ -13,6 +13,7 @@ typedef BicubicResizeRgbNative = Int32 Function(
   Int32 outputWidth,
   Int32 outputHeight,
   Int32 filter,
+  Float crop,
 );
 
 typedef BicubicResizeRgbDart = int Function(
@@ -23,6 +24,7 @@ typedef BicubicResizeRgbDart = int Function(
   int outputWidth,
   int outputHeight,
   int filter,
+  double crop,
 );
 
 typedef BicubicResizeRgbaNative = Int32 Function(
@@ -33,6 +35,7 @@ typedef BicubicResizeRgbaNative = Int32 Function(
   Int32 outputWidth,
   Int32 outputHeight,
   Int32 filter,
+  Float crop,
 );
 
 typedef BicubicResizeRgbaDart = int Function(
@@ -43,6 +46,7 @@ typedef BicubicResizeRgbaDart = int Function(
   int outputWidth,
   int outputHeight,
   int filter,
+  double crop,
 );
 
 // ============================================================================
@@ -56,6 +60,7 @@ typedef BicubicResizeJpegNative = Int32 Function(
   Int32 outputHeight,
   Int32 quality,
   Int32 filter,
+  Float crop,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );
@@ -67,6 +72,7 @@ typedef BicubicResizeJpegDart = int Function(
   int outputHeight,
   int quality,
   int filter,
+  double crop,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );
@@ -77,6 +83,7 @@ typedef BicubicResizePngNative = Int32 Function(
   Int32 outputWidth,
   Int32 outputHeight,
   Int32 filter,
+  Float crop,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );
@@ -87,6 +94,7 @@ typedef BicubicResizePngDart = int Function(
   int outputWidth,
   int outputHeight,
   int filter,
+  double crop,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );

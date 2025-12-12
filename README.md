@@ -10,6 +10,7 @@ Fast, consistent bicubic image resizing for Flutter.
 - Full native pipeline: decode -> resize -> encode (no Dart image libraries)
 - RGB and RGBA support
 - JPEG and PNG support with alpha channel preservation
+- Optional center crop before resize
 - Zero external Dart dependencies (only `ffi`)
 
 ## Installation
@@ -90,6 +91,23 @@ Available filters:
 - `BicubicFilter.catmullRom` - Default. Same as OpenCV/PIL. Best for ML.
 - `BicubicFilter.cubicBSpline` - Smoother, more blurry.
 - `BicubicFilter.mitchell` - Balanced between sharp and smooth.
+
+### Center crop before resize
+
+```dart
+// Take center 80% of the image, then resize
+final cropped = BicubicResizer.resizeJpeg(
+  jpegBytes: originalBytes,
+  outputWidth: 224,
+  outputHeight: 224,
+  crop: 0.8, // 0.0-1.0, default 1.0 (no crop)
+);
+```
+
+The `crop` parameter works on all methods. Values:
+- `1.0` - No crop (default)
+- `0.8` - Take center 80%
+- `0.5` - Take center 50%
 
 ## Why?
 

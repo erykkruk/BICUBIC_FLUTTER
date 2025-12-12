@@ -27,6 +27,7 @@ extern "C" {
 
 // Resize RGB image using specified filter
 // filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
+// crop: center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_rgb(
     const uint8_t* input,
@@ -35,11 +36,13 @@ FFI_EXPORT int bicubic_resize_rgb(
     uint8_t* output,
     int output_width,
     int output_height,
-    int filter
+    int filter,
+    float crop
 );
 
 // Resize RGBA image using specified filter
 // filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
+// crop: center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_rgba(
     const uint8_t* input,
@@ -48,7 +51,8 @@ FFI_EXPORT int bicubic_resize_rgba(
     uint8_t* output,
     int output_width,
     int output_height,
-    int filter
+    int filter,
+    float crop
 );
 
 // ============================================================================
@@ -58,6 +62,7 @@ FFI_EXPORT int bicubic_resize_rgba(
 // Resize JPEG image
 // filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
 // quality: JPEG quality 1-100
+// crop: center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_jpeg(
     const uint8_t* input_data,
@@ -66,6 +71,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
     int output_height,
     int quality,
     int filter,
+    float crop,
     uint8_t** output_data,
     int* output_size
 );
@@ -76,6 +82,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
 
 // Resize PNG image
 // filter: 0=Catmull-Rom (default), 1=Cubic B-Spline, 2=Mitchell
+// crop: center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
 // Returns 0 on success, -1 on error
 FFI_EXPORT int bicubic_resize_png(
     const uint8_t* input_data,
@@ -83,6 +90,7 @@ FFI_EXPORT int bicubic_resize_png(
     int output_width,
     int output_height,
     int filter,
+    float crop,
     uint8_t** output_data,
     int* output_size
 );

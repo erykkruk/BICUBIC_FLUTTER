@@ -38,6 +38,7 @@ class _ResizeDemoState extends State<ResizeDemo> {
   int _resizeTimeMs = 0;
   int _outputWidth = 224;
   int _outputHeight = 224;
+  double _crop = 1.0;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -69,6 +70,7 @@ class _ResizeDemoState extends State<ResizeDemo> {
         outputWidth: _outputWidth,
         outputHeight: _outputHeight,
         quality: 95,
+        crop: _crop,
       );
 
       stopwatch.stop();
@@ -142,6 +144,26 @@ class _ResizeDemoState extends State<ResizeDemo> {
               ],
             ),
             const SizedBox(height: 16),
+            Row(
+              children: [
+                Text('Crop: ${(_crop * 100).toStringAsFixed(0)}%'),
+                Expanded(
+                  child: Slider(
+                    value: _crop,
+                    min: 0.1,
+                    max: 1.0,
+                    divisions: 18,
+                    label: '${(_crop * 100).toStringAsFixed(0)}%',
+                    onChanged: (value) {
+                      setState(() {
+                        _crop = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _originalBytes != null && !_isLoading
                   ? _resizeImage
@@ -153,7 +175,7 @@ class _ResizeDemoState extends State<ResizeDemo> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.transform),
-              label: Text(_isLoading ? 'Resizing...' : 'Resize to ${_outputWidth}x$_outputHeight'),
+              label: Text(_isLoading ? 'Resizing...' : 'Resize to ${_outputWidth}x$_outputHeight${_crop < 1.0 ? ' (crop ${(_crop * 100).toStringAsFixed(0)}%)' : ''}'),
             ),
             if (_resizeTimeMs > 0) ...[
               const SizedBox(height: 8),
