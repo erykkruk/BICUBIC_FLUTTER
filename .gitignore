@@ -54,3 +54,4 @@ app.*.map.json
 # Generated code
 *.g.dart
 *.freezed.dart
+/android/.cxx

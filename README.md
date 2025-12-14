@@ -10,7 +10,8 @@ Fast, consistent bicubic image resizing for Flutter.
 - Full native pipeline: decode -> resize -> encode (no Dart image libraries)
 - RGB and RGBA support
 - JPEG and PNG support with alpha channel preservation
-- Optional center crop before resize
+- **EXIF orientation support** - automatically rotates JPEG images correctly
+- **1:1 aspect ratio crop** - square center crop without stretching
 - Zero external Dart dependencies (only `ffi`)
 
 ## Installation
@@ -19,7 +20,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_bicubic_resize: ^1.0.0
+  flutter_bicubic_resize: ^1.2.0
 ```
 
 Or run:
@@ -92,22 +93,28 @@ Available filters:
 - `BicubicFilter.cubicBSpline` - Smoother, more blurry.
 - `BicubicFilter.mitchell` - Balanced between sharp and smooth.
 
-### Center crop before resize
+### Center crop (1:1 aspect ratio)
+
+The `crop` parameter extracts a **square region** from the center of the image, ensuring no stretching or distortion.
 
 ```dart
-// Take center 80% of the image, then resize
+// Crop square from center, then resize to 224x224
 final cropped = BicubicResizer.resizeJpeg(
   jpegBytes: originalBytes,
   outputWidth: 224,
   outputHeight: 224,
-  crop: 0.8, // 0.0-1.0, default 1.0 (no crop)
+  crop: 1.0, // Full square (min dimension)
 );
 ```
 
-The `crop` parameter works on all methods. Values:
-- `1.0` - No crop (default)
-- `0.8` - Take center 80%
-- `0.5` - Take center 50%
+**How it works:**
+
+For an image 1920x1080:
+- `crop: 1.0` → crops 1080x1080 square from center
+- `crop: 0.8` → crops 864x864 square from center (80% of 1080)
+- `crop: 0.5` → crops 540x540 square from center (50% of 1080)
+
+The crop always uses the **minimum dimension** to ensure a perfect square without stretching.
 
 ## Why?
 
@@ -122,14 +129,17 @@ This package uses the **same C code** on both platforms, ensuring **identical ou
 The entire image processing pipeline runs in native C code:
 
 1. **Decode** - stb_image decodes JPEG/PNG to raw pixels
-2. **Resize** - stb_image_resize2 applies bicubic interpolation
-3. **Encode** - stb_image_write encodes back to JPEG/PNG
+2. **EXIF orientation** - For JPEG: parses EXIF metadata and applies correct rotation/flip
+3. **Center crop** - Extracts square region from center (1:1 aspect ratio)
+4. **Resize** - stb_image_resize2 applies bicubic interpolation
+5. **Encode** - stb_image_write encodes back to JPEG/PNG
 
 This means:
 - No Dart image libraries needed
 - Minimal memory overhead
 - Maximum performance
 - Consistent results across platforms
+- Photos from mobile cameras display correctly (no rotation issues)
 
 ## Algorithm
 

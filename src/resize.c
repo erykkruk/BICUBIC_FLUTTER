@@ -19,6 +19,189 @@
 #include <string.h>
 
 // ============================================================================
+// EXIF Orientation parsing
+// ============================================================================
+
+// EXIF orientation values:
+// 1 = Normal
+// 2 = Flip horizontal
+// 3 = Rotate 180
+// 4 = Flip vertical
+// 5 = Transpose (rotate 90 CW + flip horizontal)
+// 6 = Rotate 90 CW
+// 7 = Transverse (rotate 90 CCW + flip horizontal)
+// 8 = Rotate 90 CCW
+
+static int parse_exif_orientation(const uint8_t* data, int size) {
+    if (size < 12) return 1;
+
+    // Check for JPEG SOI marker
+    if (data[0] != 0xFF || data[1] != 0xD8) return 1;
+
+    int offset = 2;
+    while (offset + 4 < size) {
+        if (data[offset] != 0xFF) return 1;
+
+        uint8_t marker = data[offset + 1];
+
+        // Skip padding bytes
+        if (marker == 0xFF) {
+            offset++;
+            continue;
+        }
+
+        // APP1 marker (EXIF)
+        if (marker == 0xE1) {
+            int segment_length = (data[offset + 2] << 8) | data[offset + 3];
+            int segment_start = offset + 4;
+
+            // Check for "Exif\0\0" identifier
+            if (segment_start + 6 > size) return 1;
+            if (data[segment_start] != 'E' || data[segment_start + 1] != 'x' ||
+                data[segment_start + 2] != 'i' || data[segment_start + 3] != 'f' ||
+                data[segment_start + 4] != 0 || data[segment_start + 5] != 0) {
+                return 1;
+            }
+
+            int tiff_start = segment_start + 6;
+            if (tiff_start + 8 > size) return 1;
+
+            // Check byte order (II = little endian, MM = big endian)
+            int little_endian = (data[tiff_start] == 'I' && data[tiff_start + 1] == 'I');
+            int big_endian = (data[tiff_start] == 'M' && data[tiff_start + 1] == 'M');
+            if (!little_endian && !big_endian) return 1;
+
+            // Read IFD0 offset
+            uint32_t ifd_offset;
+            if (little_endian) {
+                ifd_offset = data[tiff_start + 4] | (data[tiff_start + 5] << 8) |
+                            (data[tiff_start + 6] << 16) | (data[tiff_start + 7] << 24);
+            } else {
+                ifd_offset = (data[tiff_start + 4] << 24) | (data[tiff_start + 5] << 16) |
+                            (data[tiff_start + 6] << 8) | data[tiff_start + 7];
+            }
+
+            int ifd_start = tiff_start + ifd_offset;
+            if (ifd_start + 2 > size) return 1;
+
+            // Read number of directory entries
+            uint16_t num_entries;
+            if (little_endian) {
+                num_entries = data[ifd_start] | (data[ifd_start + 1] << 8);
+            } else {
+                num_entries = (data[ifd_start] << 8) | data[ifd_start + 1];
+            }
+
+            // Search for orientation tag (0x0112)
+            int entry_start = ifd_start + 2;
+            for (int i = 0; i < num_entries; i++) {
+                int entry_offset = entry_start + i * 12;
+                if (entry_offset + 12 > size) return 1;
+
+                uint16_t tag;
+                if (little_endian) {
+                    tag = data[entry_offset] | (data[entry_offset + 1] << 8);
+                } else {
+                    tag = (data[entry_offset] << 8) | data[entry_offset + 1];
+                }
+
+                if (tag == 0x0112) {  // Orientation tag
+                    uint16_t orientation;
+                    if (little_endian) {
+                        orientation = data[entry_offset + 8] | (data[entry_offset + 9] << 8);
+                    } else {
+                        orientation = (data[entry_offset + 8] << 8) | data[entry_offset + 9];
+                    }
+                    return (orientation >= 1 && orientation <= 8) ? orientation : 1;
+                }
+            }
+            return 1;  // No orientation tag found
+        }
+
+        // SOS marker - stop searching
+        if (marker == 0xDA) return 1;
+
+        // Skip to next segment
+        int segment_length = (data[offset + 2] << 8) | data[offset + 3];
+        offset += 2 + segment_length;
+    }
+
+    return 1;  // No EXIF found
+}
+
+// Apply EXIF orientation transformation
+static uint8_t* apply_orientation(uint8_t* pixels, int* width, int* height, int channels, int orientation) {
+    if (orientation == 1) return pixels;  // Normal, no transformation needed
+
+    int w = *width;
+    int h = *height;
+
+    uint8_t* result = NULL;
+    int new_w = w, new_h = h;
+
+    // Orientations 5,6,7,8 swap width and height
+    if (orientation >= 5) {
+        new_w = h;
+        new_h = w;
+    }
+
+    result = (uint8_t*)malloc(new_w * new_h * channels);
+    if (!result) return pixels;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            int src_idx = (y * w + x) * channels;
+            int dst_x, dst_y;
+
+            switch (orientation) {
+                case 2:  // Flip horizontal
+                    dst_x = w - 1 - x;
+                    dst_y = y;
+                    break;
+                case 3:  // Rotate 180
+                    dst_x = w - 1 - x;
+                    dst_y = h - 1 - y;
+                    break;
+                case 4:  // Flip vertical
+                    dst_x = x;
+                    dst_y = h - 1 - y;
+                    break;
+                case 5:  // Transpose (rotate 90 CW + flip horizontal)
+                    dst_x = y;
+                    dst_y = x;
+                    break;
+                case 6:  // Rotate 90 CW
+                    dst_x = h - 1 - y;
+                    dst_y = x;
+                    break;
+                case 7:  // Transverse (rotate 90 CCW + flip horizontal)
+                    dst_x = h - 1 - y;
+                    dst_y = w - 1 - x;
+                    break;
+                case 8:  // Rotate 90 CCW
+                    dst_x = y;
+                    dst_y = w - 1 - x;
+                    break;
+                default:
+                    dst_x = x;
+                    dst_y = y;
+                    break;
+            }
+
+            int dst_idx = (dst_y * new_w + dst_x) * channels;
+            for (int c = 0; c < channels; c++) {
+                result[dst_idx + c] = pixels[src_idx + c];
+            }
+        }
+    }
+
+    free(pixels);
+    *width = new_w;
+    *height = new_h;
+    return result;
+}
+
+// ============================================================================
 // Helper: clamp crop value to valid range
 // ============================================================================
 
@@ -29,7 +212,7 @@ static float clamp_crop(float crop) {
 }
 
 // ============================================================================
-// Helper: calculate center crop parameters
+// Helper: calculate center crop parameters (1:1 aspect ratio - square crop)
 // ============================================================================
 
 static void calc_center_crop(
@@ -37,14 +220,21 @@ static void calc_center_crop(
     int* crop_x, int* crop_y, int* crop_width, int* crop_height
 ) {
     crop = clamp_crop(crop);
-    *crop_width = (int)(src_width * crop);
-    *crop_height = (int)(src_height * crop);
-    *crop_x = (src_width - *crop_width) / 2;
-    *crop_y = (src_height - *crop_height) / 2;
+
+    // Use the minimum dimension to ensure 1:1 aspect ratio (square crop)
+    int min_dim = (src_width < src_height) ? src_width : src_height;
+
+    // Apply crop factor to the square
+    int crop_size = (int)(min_dim * crop);
 
     // Ensure at least 1x1
-    if (*crop_width < 1) *crop_width = 1;
-    if (*crop_height < 1) *crop_height = 1;
+    if (crop_size < 1) crop_size = 1;
+
+    // Center the square crop
+    *crop_width = crop_size;
+    *crop_height = crop_size;
+    *crop_x = (src_width - crop_size) / 2;
+    *crop_y = (src_height - crop_size) / 2;
 }
 
 // ============================================================================
@@ -198,6 +388,9 @@ FFI_EXPORT int bicubic_resize_jpeg(
     if (quality < 1) quality = 1;
     if (quality > 100) quality = 100;
 
+    // Parse EXIF orientation before decoding
+    int orientation = parse_exif_orientation(input_data, input_size);
+
     // Decode JPEG
     int src_width, src_height, src_channels;
     uint8_t* src_pixels = stbi_load_from_memory(
@@ -210,7 +403,10 @@ FFI_EXPORT int bicubic_resize_jpeg(
         return -1;
     }
 
-    // Calculate center crop region
+    // Apply EXIF orientation (may swap width/height for 90/270 degree rotations)
+    src_pixels = apply_orientation(src_pixels, &src_width, &src_height, 3, orientation);
+
+    // Calculate center crop region (now 1:1 aspect ratio - square)
     int crop_x, crop_y, crop_width, crop_height;
     calc_center_crop(src_width, src_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
 
@@ -220,7 +416,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
     // Allocate output pixel buffer
     uint8_t* dst_pixels = (uint8_t*)malloc(output_width * output_height * 3);
     if (dst_pixels == NULL) {
-        stbi_image_free(src_pixels);
+        free(src_pixels);
         return -1;
     }
 
@@ -240,7 +436,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
         get_stbir_filter(filter)
     );
 
-    stbi_image_free(src_pixels);
+    free(src_pixels);
 
     // Encode to JPEG
     WriteContext ctx;

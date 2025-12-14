@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0] - 2025-12-14
+
+### Added
+- **EXIF orientation support** for JPEG images - photos from mobile cameras now display correctly
+- Automatic rotation/flip based on EXIF metadata (supports all 8 orientation values)
+
+### Changed
+- **Breaking:** Crop now produces 1:1 aspect ratio (square) instead of proportional crop
+  - `crop: 1.0` on 1920x1080 image now crops to 1080x1080 (not 1920x1080)
+  - This prevents stretching when resizing to square output (e.g., 224x224)
+- Updated README with new features documentation
+
 ## [1.1.0] - 2025-12-12
 
 ### Added
