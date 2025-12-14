@@ -20,7 +20,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_bicubic_resize: ^1.2.0
+  flutter_bicubic_resize: ^1.2.1
 ```
 
 Or run:

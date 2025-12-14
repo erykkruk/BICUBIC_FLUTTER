@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1] - 2025-12-14
+
+### Fixed
+- **iOS release build crash** - Fixed FFI symbol stripping issue that caused "symbol not found" errors in release/archive builds
+- Added proper Xcode build settings to prevent symbol stripping (`STRIP_STYLE=non-global`)
+- Added symbol retention mechanism in Swift plugin to ensure C functions are linked
+
 ## [1.2.0] - 2025-12-14
 
 ### Added

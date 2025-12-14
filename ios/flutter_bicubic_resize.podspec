@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'flutter_bicubic_resize'
-  s.version          = '1.2.0'
+  s.version          = '1.2.1'
   s.summary          = 'Bicubic image resize for Flutter using native C code'
   s.description      = 'Cross-platform bicubic image resizing with identical results on iOS and Android'
   s.homepage         = 'https://github.com/erykkruk/BICUBIC_FLUTTER'
