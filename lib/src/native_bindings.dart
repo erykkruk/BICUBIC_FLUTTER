@@ -135,10 +135,9 @@ class NativeBindings {
   DynamicLibrary _loadLibrary() {
     if (Platform.isAndroid) {
       return DynamicLibrary.open('libflutter_bicubic_resize.so');
-    } else if (Platform.isIOS) {
-      return DynamicLibrary.process();
-    } else if (Platform.isMacOS) {
-      return DynamicLibrary.process();
+    } else if (Platform.isIOS || Platform.isMacOS) {
+      // On iOS/macOS, symbols are statically linked into the executable
+      return DynamicLibrary.executable();
     } else if (Platform.isLinux) {
       return DynamicLibrary.open('libflutter_bicubic_resize.so');
     } else if (Platform.isWindows) {

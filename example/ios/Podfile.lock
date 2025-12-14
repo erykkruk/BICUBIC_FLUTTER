@@ -1,6 +1,7 @@
 PODS:
   - Flutter (1.0.0)
-  - flutter_bicubic_resize (1.0.0)
+  - flutter_bicubic_resize (1.2.0):
+    - Flutter
   - image_picker_ios (0.0.1):
     - Flutter
 
@@ -19,9 +20,9 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_bicubic_resize: a409d844e56a617b2313db12fb7a06e430082bee
+  flutter_bicubic_resize: b8de8f7db2f591c8e1dc4161dbadd8a1574c2cc2
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
 
-PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+PODFILE CHECKSUM: e3d18f270326e21e907ac8e143062612cf17de55
 
 COCOAPODS: 1.16.2

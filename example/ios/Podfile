@@ -39,5 +39,17 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Prevent symbol stripping for FFI compatibility
+    target.build_configurations.each do |config|
+      config.build_settings['STRIP_STYLE'] = 'non-global'
+      config.build_settings['DEAD_CODE_STRIPPING'] = 'NO'
+    end
+  end
+
+  # Also apply to the main project
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings['STRIP_STYLE'] = 'non-global'
+    config.build_settings['DEAD_CODE_STRIPPING'] = 'NO'
   end
 end
