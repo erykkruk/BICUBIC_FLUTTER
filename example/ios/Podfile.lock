@@ -1,0 +1,27 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_bicubic_resize (1.0.0)
+  - image_picker_ios (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_bicubic_resize (from `.symlinks/plugins/flutter_bicubic_resize/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_bicubic_resize:
+    :path: ".symlinks/plugins/flutter_bicubic_resize/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_bicubic_resize: a409d844e56a617b2313db12fb7a06e430082bee
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
+
+PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+
+COCOAPODS: 1.16.2
