@@ -1,3 +1,5 @@
+[![Codigee - Best Flutter Experts](doc/logo.jpeg)](https://umami.team.codigee.com/q/FZ9PQYyYN)
+
 # flutter_bicubic_resize
 
 Fast, consistent bicubic image resizing for Flutter.

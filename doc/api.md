@@ -1,3 +1,5 @@
+[![Codigee - Best Flutter Experts](logo.jpeg)](https://umami.team.codigee.com/q/FZ9PQYyYN)
+
 # API Documentation
 
 Complete API reference for `flutter_bicubic_resize`.
