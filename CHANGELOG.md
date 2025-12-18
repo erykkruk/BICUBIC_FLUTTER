@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.3] - 2025-12-18
+
+### Added
+- **Format detection and validation** - library now handles unsupported formats
+  - `ImageFormat` enum (`jpeg`, `png`) for supported formats
+  - `UnsupportedImageFormatException` - thrown for unsupported formats (HEIC, WebP, GIF, etc.)
+  - `BicubicResizer.detectFormat(bytes)` - detect image format from bytes
+  - `BicubicResizer.resize(bytes: ...)` - generic resize with auto-detection, throws exception for unsupported formats
+
 ## [1.2.2] - 2025-12-18
 
 ### Added

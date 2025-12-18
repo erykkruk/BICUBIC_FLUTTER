@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bicubic_resize/flutter_bicubic_resize.dart';
 import 'package:image_picker/image_picker.dart';
@@ -43,10 +42,29 @@ class _ResizeDemoState extends State<ResizeDemo> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      requestFullMetadata: false,
+    );
     if (image == null) return;
 
     final bytes = await image.readAsBytes();
+    final format = BicubicResizer.detectFormat(bytes);
+
+    debugPrint('Image format: ${format?.name ?? "unsupported"}, size: ${bytes.length} bytes');
+
+    if (format == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unsupported format! Please select JPEG or PNG image.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
       _originalBytes = bytes;
       _resizedBytes = null;
@@ -64,9 +82,8 @@ class _ResizeDemoState extends State<ResizeDemo> {
     final stopwatch = Stopwatch()..start();
 
     try {
-      // Native resize is synchronous but very fast
-      final resized = BicubicResizer.resizeJpeg(
-        jpegBytes: _originalBytes!,
+      final resized = BicubicResizer.resize(
+        bytes: _originalBytes!,
         outputWidth: _outputWidth,
         outputHeight: _outputHeight,
         quality: 95,
@@ -80,6 +97,17 @@ class _ResizeDemoState extends State<ResizeDemo> {
         _resizeTimeMs = stopwatch.elapsedMilliseconds;
         _isLoading = false;
       });
+    } on UnsupportedImageFormatException catch (e) {
+      stopwatch.stop();
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+        );
+      }
     } catch (e) {
       stopwatch.stop();
       setState(() {
@@ -88,7 +116,7 @@ class _ResizeDemoState extends State<ResizeDemo> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }

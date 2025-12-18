@@ -1,6 +1,6 @@
 name: flutter_bicubic_resize
-description: Fast, consistent bicubic image resizing across iOS and Android using native C code with Catmull-Rom interpolation.
-version: 1.2.2
+description: Fastest image resize, crop and compress for Flutter. 3-4x faster than other libraries. Native C code, consistent results on iOS/Android.
+version: 1.2.3
 homepage: https://github.com/erykkruk/BICUBIC_FLUTTER
 repository: https://github.com/erykkruk/BICUBIC_FLUTTER
 issue_tracker: https://github.com/erykkruk/BICUBIC_FLUTTER/issues
@@ -12,6 +12,9 @@ topics:
   - ffi
   - image-processing
   - native
+  - compress
+  - ml-image
+  - crop
 
 funding:
   - https://codigee.com

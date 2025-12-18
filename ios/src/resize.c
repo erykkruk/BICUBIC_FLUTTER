@@ -212,29 +212,120 @@ static float clamp_crop(float crop) {
 }
 
 // ============================================================================
-// Helper: calculate center crop parameters (1:1 aspect ratio - square crop)
+// Helper: convert edge mode enum to stbir edge mode
 // ============================================================================
 
-static void calc_center_crop(
+static stbir_edge get_stbir_edge(int edge_mode) {
+    switch (edge_mode) {
+        case EDGE_WRAP:
+            return STBIR_EDGE_WRAP;
+        case EDGE_REFLECT:
+            return STBIR_EDGE_REFLECT;
+        case EDGE_ZERO:
+            return STBIR_EDGE_ZERO;
+        case EDGE_CLAMP:
+        default:
+            return STBIR_EDGE_CLAMP;
+    }
+}
+
+// ============================================================================
+// Helper: calculate crop parameters with anchor and aspect ratio support
+// ============================================================================
+
+static void calc_crop(
     int src_width, int src_height, float crop,
-    int* crop_x, int* crop_y, int* crop_width, int* crop_height
+    int crop_anchor, int aspect_mode, float aspect_w, float aspect_h,
+    int* out_x, int* out_y, int* out_width, int* out_height
 ) {
     crop = clamp_crop(crop);
 
-    // Use the minimum dimension to ensure 1:1 aspect ratio (square crop)
-    int min_dim = (src_width < src_height) ? src_width : src_height;
+    int crop_w, crop_h;
 
-    // Apply crop factor to the square
-    int crop_size = (int)(min_dim * crop);
+    // Calculate crop dimensions based on aspect mode
+    if (aspect_mode == ASPECT_ORIGINAL) {
+        // Keep original aspect ratio
+        crop_w = (int)(src_width * crop);
+        crop_h = (int)(src_height * crop);
+    } else if (aspect_mode == ASPECT_CUSTOM && aspect_w > 0 && aspect_h > 0) {
+        // Custom aspect ratio
+        float target_ratio = aspect_w / aspect_h;
+        float src_ratio = (float)src_width / (float)src_height;
+
+        if (src_ratio > target_ratio) {
+            // Source is wider - height constrains
+            crop_h = (int)(src_height * crop);
+            crop_w = (int)(crop_h * target_ratio);
+        } else {
+            // Source is taller - width constrains
+            crop_w = (int)(src_width * crop);
+            crop_h = (int)(crop_w / target_ratio);
+        }
+    } else {
+        // ASPECT_SQUARE (default) - 1:1 aspect ratio
+        int min_dim = (src_width < src_height) ? src_width : src_height;
+        int crop_size = (int)(min_dim * crop);
+        crop_w = crop_size;
+        crop_h = crop_size;
+    }
 
     // Ensure at least 1x1
-    if (crop_size < 1) crop_size = 1;
+    if (crop_w < 1) crop_w = 1;
+    if (crop_h < 1) crop_h = 1;
 
-    // Center the square crop
-    *crop_width = crop_size;
-    *crop_height = crop_size;
-    *crop_x = (src_width - crop_size) / 2;
-    *crop_y = (src_height - crop_size) / 2;
+    // Ensure doesn't exceed source dimensions
+    if (crop_w > src_width) crop_w = src_width;
+    if (crop_h > src_height) crop_h = src_height;
+
+    // Calculate position based on anchor
+    int x = 0, y = 0;
+    int remaining_x = src_width - crop_w;
+    int remaining_y = src_height - crop_h;
+
+    switch (crop_anchor) {
+        case CROP_TOP_LEFT:
+            x = 0;
+            y = 0;
+            break;
+        case CROP_TOP_CENTER:
+            x = remaining_x / 2;
+            y = 0;
+            break;
+        case CROP_TOP_RIGHT:
+            x = remaining_x;
+            y = 0;
+            break;
+        case CROP_CENTER_LEFT:
+            x = 0;
+            y = remaining_y / 2;
+            break;
+        case CROP_CENTER_RIGHT:
+            x = remaining_x;
+            y = remaining_y / 2;
+            break;
+        case CROP_BOTTOM_LEFT:
+            x = 0;
+            y = remaining_y;
+            break;
+        case CROP_BOTTOM_CENTER:
+            x = remaining_x / 2;
+            y = remaining_y;
+            break;
+        case CROP_BOTTOM_RIGHT:
+            x = remaining_x;
+            y = remaining_y;
+            break;
+        case CROP_CENTER:
+        default:
+            x = remaining_x / 2;
+            y = remaining_y / 2;
+            break;
+    }
+
+    *out_x = x;
+    *out_y = y;
+    *out_width = crop_w;
+    *out_height = crop_h;
 }
 
 // ============================================================================
@@ -265,7 +356,12 @@ FFI_EXPORT int bicubic_resize_rgb(
     int output_width,
     int output_height,
     int filter,
-    float crop
+    int edge_mode,
+    float crop,
+    int crop_anchor,
+    int aspect_mode,
+    float aspect_w,
+    float aspect_h
 ) {
     if (input == NULL || output == NULL) {
         return -1;
@@ -274,9 +370,10 @@ FFI_EXPORT int bicubic_resize_rgb(
         return -1;
     }
 
-    // Calculate center crop region
+    // Calculate crop region
     int crop_x, crop_y, crop_width, crop_height;
-    calc_center_crop(input_width, input_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+    calc_crop(input_width, input_height, crop, crop_anchor, aspect_mode, aspect_w, aspect_h,
+              &crop_x, &crop_y, &crop_width, &crop_height);
 
     // Get pointer to start of cropped region
     const uint8_t* crop_start = input + (crop_y * input_width + crop_x) * 3;
@@ -292,7 +389,7 @@ FFI_EXPORT int bicubic_resize_rgb(
         output_width * 3,
         STBIR_RGB,
         STBIR_TYPE_UINT8,
-        STBIR_EDGE_CLAMP,
+        get_stbir_edge(edge_mode),
         get_stbir_filter(filter)
     );
 
@@ -307,7 +404,12 @@ FFI_EXPORT int bicubic_resize_rgba(
     int output_width,
     int output_height,
     int filter,
-    float crop
+    int edge_mode,
+    float crop,
+    int crop_anchor,
+    int aspect_mode,
+    float aspect_w,
+    float aspect_h
 ) {
     if (input == NULL || output == NULL) {
         return -1;
@@ -316,9 +418,10 @@ FFI_EXPORT int bicubic_resize_rgba(
         return -1;
     }
 
-    // Calculate center crop region
+    // Calculate crop region
     int crop_x, crop_y, crop_width, crop_height;
-    calc_center_crop(input_width, input_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+    calc_crop(input_width, input_height, crop, crop_anchor, aspect_mode, aspect_w, aspect_h,
+              &crop_x, &crop_y, &crop_width, &crop_height);
 
     // Get pointer to start of cropped region
     const uint8_t* crop_start = input + (crop_y * input_width + crop_x) * 4;
@@ -334,7 +437,7 @@ FFI_EXPORT int bicubic_resize_rgba(
         output_width * 4,
         STBIR_RGBA,
         STBIR_TYPE_UINT8,
-        STBIR_EDGE_CLAMP,
+        get_stbir_edge(edge_mode),
         get_stbir_filter(filter)
     );
 
@@ -375,7 +478,13 @@ FFI_EXPORT int bicubic_resize_jpeg(
     int output_height,
     int quality,
     int filter,
+    int edge_mode,
     float crop,
+    int crop_anchor,
+    int aspect_mode,
+    float aspect_w,
+    float aspect_h,
+    int apply_exif,
     uint8_t** output_data,
     int* output_size
 ) {
@@ -388,8 +497,11 @@ FFI_EXPORT int bicubic_resize_jpeg(
     if (quality < 1) quality = 1;
     if (quality > 100) quality = 100;
 
-    // Parse EXIF orientation before decoding
-    int orientation = parse_exif_orientation(input_data, input_size);
+    // Parse EXIF orientation before decoding (if enabled)
+    int orientation = 1;  // Default: no transformation
+    if (apply_exif) {
+        orientation = parse_exif_orientation(input_data, input_size);
+    }
 
     // Decode JPEG
     int src_width, src_height, src_channels;
@@ -404,11 +516,14 @@ FFI_EXPORT int bicubic_resize_jpeg(
     }
 
     // Apply EXIF orientation (may swap width/height for 90/270 degree rotations)
-    src_pixels = apply_orientation(src_pixels, &src_width, &src_height, 3, orientation);
+    if (apply_exif) {
+        src_pixels = apply_orientation(src_pixels, &src_width, &src_height, 3, orientation);
+    }
 
-    // Calculate center crop region (now 1:1 aspect ratio - square)
+    // Calculate crop region
     int crop_x, crop_y, crop_width, crop_height;
-    calc_center_crop(src_width, src_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+    calc_crop(src_width, src_height, crop, crop_anchor, aspect_mode, aspect_w, aspect_h,
+              &crop_x, &crop_y, &crop_width, &crop_height);
 
     // Get pointer to start of cropped region
     const uint8_t* crop_start = src_pixels + (crop_y * src_width + crop_x) * 3;
@@ -432,7 +547,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
         output_width * 3,
         STBIR_RGB,
         STBIR_TYPE_UINT8,
-        STBIR_EDGE_CLAMP,
+        get_stbir_edge(edge_mode),
         get_stbir_filter(filter)
     );
 
@@ -473,13 +588,22 @@ FFI_EXPORT int bicubic_resize_jpeg(
 // PNG resize
 // ============================================================================
 
+// External variable from stb_image_write for PNG compression level
+extern int stbi_write_png_compression_level;
+
 FFI_EXPORT int bicubic_resize_png(
     const uint8_t* input_data,
     int input_size,
     int output_width,
     int output_height,
     int filter,
+    int edge_mode,
     float crop,
+    int crop_anchor,
+    int aspect_mode,
+    float aspect_w,
+    float aspect_h,
+    int compression_level,
     uint8_t** output_data,
     int* output_size
 ) {
@@ -489,6 +613,10 @@ FFI_EXPORT int bicubic_resize_png(
     if (input_size <= 0 || output_width <= 0 || output_height <= 0) {
         return -1;
     }
+
+    // Clamp compression level to valid range (0-9)
+    if (compression_level < 0) compression_level = 0;
+    if (compression_level > 9) compression_level = 9;
 
     // Decode PNG (preserve alpha if present)
     int src_width, src_height, src_channels;
@@ -519,9 +647,10 @@ FFI_EXPORT int bicubic_resize_png(
         }
     }
 
-    // Calculate center crop region
+    // Calculate crop region
     int crop_x, crop_y, crop_width, crop_height;
-    calc_center_crop(src_width, src_height, crop, &crop_x, &crop_y, &crop_width, &crop_height);
+    calc_crop(src_width, src_height, crop, crop_anchor, aspect_mode, aspect_w, aspect_h,
+              &crop_x, &crop_y, &crop_width, &crop_height);
 
     // Get pointer to start of cropped region
     const uint8_t* crop_start = src_pixels + (crop_y * src_width + crop_x) * channels;
@@ -545,11 +674,14 @@ FFI_EXPORT int bicubic_resize_png(
         output_width * channels,
         (channels == 4) ? STBIR_RGBA : STBIR_RGB,
         STBIR_TYPE_UINT8,
-        STBIR_EDGE_CLAMP,
+        get_stbir_edge(edge_mode),
         get_stbir_filter(filter)
     );
 
     stbi_image_free(src_pixels);
+
+    // Set PNG compression level
+    stbi_write_png_compression_level = compression_level;
 
     // Encode to PNG
     WriteContext ctx;

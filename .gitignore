@@ -57,3 +57,9 @@ app.*.map.json
 /android/.cxx
 example/ios/Flutter/flutter_export_environment.sh
 example/ios/Flutter/Generated.xcconfig
+example/macos/Flutter/ephemeral/Flutter-Generated.xcconfig
+example/macos/Flutter/ephemeral/flutter_export_environment.sh
+example/ios/Podfile.lock
+example/linux/flutter/ephemeral/.plugin_symlinks/file_selector_linux
+example/linux/flutter/ephemeral/.plugin_symlinks/image_picker_linux
+example/pubspec.lock

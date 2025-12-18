@@ -26,13 +26,16 @@ public class FlutterBicubicResizePlugin: NSObject, FlutterPlugin {
 
     // Call each function with minimal parameters to force symbol inclusion
     // These calls are safe - they return early due to invalid dimensions
-    _ = bicubic_resize_rgb(&dummyInput, 0, 0, &dummyOutput, 0, 0, 0, 1.0)
-    _ = bicubic_resize_rgba(&dummyInput, 0, 0, &dummyOutput, 0, 0, 0, 1.0)
+    // New API: filter, edge_mode, crop, crop_anchor, aspect_mode, aspect_w, aspect_h
+    _ = bicubic_resize_rgb(&dummyInput, 0, 0, &dummyOutput, 0, 0, 0, 0, 1.0, 0, 0, 1.0, 1.0)
+    _ = bicubic_resize_rgba(&dummyInput, 0, 0, &dummyOutput, 0, 0, 0, 0, 1.0, 0, 0, 1.0, 1.0)
 
     var outPtr: UnsafeMutablePointer<UInt8>? = nil
     var outSize: Int32 = 0
-    _ = bicubic_resize_jpeg(&dummyInput, 0, 0, 0, 80, 0, 1.0, &outPtr, &outSize)
-    _ = bicubic_resize_png(&dummyInput, 0, 0, 0, 0, 1.0, &outPtr, &outSize)
+    // JPEG: filter, edge_mode, crop, crop_anchor, aspect_mode, aspect_w, aspect_h, apply_exif
+    _ = bicubic_resize_jpeg(&dummyInput, 0, 0, 0, 80, 0, 0, 1.0, 0, 0, 1.0, 1.0, 1, &outPtr, &outSize)
+    // PNG: filter, edge_mode, crop, crop_anchor, aspect_mode, aspect_w, aspect_h, compression_level
+    _ = bicubic_resize_png(&dummyInput, 0, 0, 0, 0, 0, 1.0, 0, 0, 1.0, 1.0, 6, &outPtr, &outSize)
 
     free_buffer(nil)
   }

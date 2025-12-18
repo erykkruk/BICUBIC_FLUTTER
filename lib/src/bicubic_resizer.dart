@@ -5,6 +5,35 @@ import 'package:ffi/ffi.dart';
 
 import 'native_bindings.dart';
 
+/// Supported image formats for resize operations
+enum ImageFormat {
+  /// JPEG format
+  jpeg,
+
+  /// PNG format
+  png,
+}
+
+/// Exception thrown when an unsupported image format is detected.
+///
+/// This library only supports JPEG and PNG formats.
+/// Other formats like HEIC, WebP, GIF, BMP, etc. are not supported.
+class UnsupportedImageFormatException implements Exception {
+  /// The raw bytes that were passed to the resize method
+  final Uint8List bytes;
+
+  /// Human-readable message describing the error
+  final String message;
+
+  UnsupportedImageFormatException({
+    required this.bytes,
+    this.message = 'Unsupported image format. Only JPEG and PNG are supported.',
+  });
+
+  @override
+  String toString() => 'UnsupportedImageFormatException: $message';
+}
+
 /// Available bicubic filter types
 enum BicubicFilter {
   /// Catmull-Rom spline (same as OpenCV INTER_CUBIC, PIL BICUBIC)
@@ -399,6 +428,117 @@ class BicubicResizer {
       calloc.free(inputPtr);
       calloc.free(outputDataPtr);
       calloc.free(outputSizePtr);
+    }
+  }
+
+  // ============================================================================
+  // Format detection
+  // ============================================================================
+
+  /// Detect the image format from raw bytes.
+  ///
+  /// Returns the detected [ImageFormat] or `null` if the format is not supported.
+  ///
+  /// Supported formats: JPEG, PNG
+  /// Unsupported formats: HEIC, WebP, GIF, BMP, TIFF, etc.
+  ///
+  /// [bytes] - Raw image data
+  static ImageFormat? detectFormat(Uint8List bytes) {
+    if (bytes.length < 4) return null;
+
+    // JPEG: starts with FF D8 FF
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return ImageFormat.jpeg;
+    }
+
+    // PNG: starts with 89 50 4E 47 (PNG magic number)
+    if (bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return ImageFormat.png;
+    }
+
+    return null;
+  }
+
+  // ============================================================================
+  // Generic resize (auto-detect format)
+  // ============================================================================
+
+  /// Resize image bytes with automatic format detection.
+  ///
+  /// This method automatically detects whether the input is JPEG or PNG
+  /// and calls the appropriate resize method.
+  ///
+  /// Throws [UnsupportedImageFormatException] if the format is not supported.
+  ///
+  /// [bytes] - Image data (JPEG or PNG)
+  /// [outputWidth] - Desired output width
+  /// [outputHeight] - Desired output height
+  /// [quality] - JPEG output quality (1-100, default 95). Ignored for PNG.
+  /// [compressionLevel] - PNG compression level (0-9, default 6). Ignored for JPEG.
+  /// [filter] - Bicubic filter type (default: Catmull-Rom)
+  /// [edgeMode] - How to handle pixels outside image bounds (default: clamp)
+  /// [crop] - Crop factor (0.0-1.0), 1.0 = no crop, 0.5 = 50%
+  /// [cropAnchor] - Position to anchor the crop (default: center)
+  /// [cropAspectRatio] - Aspect ratio mode for crop (default: square)
+  /// [aspectRatioWidth] - Custom aspect ratio width (only used with CropAspectRatio.custom)
+  /// [aspectRatioHeight] - Custom aspect ratio height (only used with CropAspectRatio.custom)
+  /// [applyExifOrientation] - Whether to apply EXIF orientation for JPEG (default: true)
+  ///
+  /// Returns resized image data in the same format as input
+  static Uint8List resize({
+    required Uint8List bytes,
+    required int outputWidth,
+    required int outputHeight,
+    int quality = 95,
+    int compressionLevel = 6,
+    BicubicFilter filter = BicubicFilter.catmullRom,
+    EdgeMode edgeMode = EdgeMode.clamp,
+    double crop = 1.0,
+    CropAnchor cropAnchor = CropAnchor.center,
+    CropAspectRatio cropAspectRatio = CropAspectRatio.square,
+    double aspectRatioWidth = 1.0,
+    double aspectRatioHeight = 1.0,
+    bool applyExifOrientation = true,
+  }) {
+    final format = detectFormat(bytes);
+
+    if (format == null) {
+      throw UnsupportedImageFormatException(bytes: bytes);
+    }
+
+    switch (format) {
+      case ImageFormat.jpeg:
+        return resizeJpeg(
+          jpegBytes: bytes,
+          outputWidth: outputWidth,
+          outputHeight: outputHeight,
+          quality: quality,
+          filter: filter,
+          edgeMode: edgeMode,
+          crop: crop,
+          cropAnchor: cropAnchor,
+          cropAspectRatio: cropAspectRatio,
+          aspectRatioWidth: aspectRatioWidth,
+          aspectRatioHeight: aspectRatioHeight,
+          applyExifOrientation: applyExifOrientation,
+        );
+      case ImageFormat.png:
+        return resizePng(
+          pngBytes: bytes,
+          outputWidth: outputWidth,
+          outputHeight: outputHeight,
+          filter: filter,
+          edgeMode: edgeMode,
+          crop: crop,
+          cropAnchor: cropAnchor,
+          cropAspectRatio: cropAspectRatio,
+          aspectRatioWidth: aspectRatioWidth,
+          aspectRatioHeight: aspectRatioHeight,
+          compressionLevel: compressionLevel,
+        );
     }
   }
 }
