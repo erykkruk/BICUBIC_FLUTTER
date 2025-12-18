@@ -13,7 +13,12 @@ typedef BicubicResizeRgbNative = Int32 Function(
   Int32 outputWidth,
   Int32 outputHeight,
   Int32 filter,
+  Int32 edgeMode,
   Float crop,
+  Int32 cropAnchor,
+  Int32 aspectMode,
+  Float aspectW,
+  Float aspectH,
 );
 
 typedef BicubicResizeRgbDart = int Function(
@@ -24,7 +29,12 @@ typedef BicubicResizeRgbDart = int Function(
   int outputWidth,
   int outputHeight,
   int filter,
+  int edgeMode,
   double crop,
+  int cropAnchor,
+  int aspectMode,
+  double aspectW,
+  double aspectH,
 );
 
 typedef BicubicResizeRgbaNative = Int32 Function(
@@ -35,7 +45,12 @@ typedef BicubicResizeRgbaNative = Int32 Function(
   Int32 outputWidth,
   Int32 outputHeight,
   Int32 filter,
+  Int32 edgeMode,
   Float crop,
+  Int32 cropAnchor,
+  Int32 aspectMode,
+  Float aspectW,
+  Float aspectH,
 );
 
 typedef BicubicResizeRgbaDart = int Function(
@@ -46,7 +61,12 @@ typedef BicubicResizeRgbaDart = int Function(
   int outputWidth,
   int outputHeight,
   int filter,
+  int edgeMode,
   double crop,
+  int cropAnchor,
+  int aspectMode,
+  double aspectW,
+  double aspectH,
 );
 
 // ============================================================================
@@ -60,7 +80,13 @@ typedef BicubicResizeJpegNative = Int32 Function(
   Int32 outputHeight,
   Int32 quality,
   Int32 filter,
+  Int32 edgeMode,
   Float crop,
+  Int32 cropAnchor,
+  Int32 aspectMode,
+  Float aspectW,
+  Float aspectH,
+  Int32 applyExif,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );
@@ -72,7 +98,13 @@ typedef BicubicResizeJpegDart = int Function(
   int outputHeight,
   int quality,
   int filter,
+  int edgeMode,
   double crop,
+  int cropAnchor,
+  int aspectMode,
+  double aspectW,
+  double aspectH,
+  int applyExif,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );
@@ -83,7 +115,13 @@ typedef BicubicResizePngNative = Int32 Function(
   Int32 outputWidth,
   Int32 outputHeight,
   Int32 filter,
+  Int32 edgeMode,
   Float crop,
+  Int32 cropAnchor,
+  Int32 aspectMode,
+  Float aspectW,
+  Float aspectH,
+  Int32 compressionLevel,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );
@@ -94,7 +132,13 @@ typedef BicubicResizePngDart = int Function(
   int outputWidth,
   int outputHeight,
   int filter,
+  int edgeMode,
   double crop,
+  int cropAnchor,
+  int aspectMode,
+  double aspectW,
+  double aspectH,
+  int compressionLevel,
   Pointer<Pointer<Uint8>> outputData,
   Pointer<Int32> outputSize,
 );

@@ -21,6 +21,72 @@ enum BicubicFilter {
   const BicubicFilter(this.value);
 }
 
+/// Edge handling modes for resize operations
+enum EdgeMode {
+  /// Repeat edge pixels (default)
+  clamp(0),
+
+  /// Wrap around (tile/repeat image)
+  wrap(1),
+
+  /// Mirror reflection at edges
+  reflect(2),
+
+  /// Black/transparent pixels outside bounds
+  zero(3);
+
+  final int value;
+  const EdgeMode(this.value);
+}
+
+/// Crop anchor positions
+enum CropAnchor {
+  /// Center of the image (default)
+  center(0),
+
+  /// Top-left corner
+  topLeft(1),
+
+  /// Top center
+  topCenter(2),
+
+  /// Top-right corner
+  topRight(3),
+
+  /// Center left
+  centerLeft(4),
+
+  /// Center right
+  centerRight(5),
+
+  /// Bottom-left corner
+  bottomLeft(6),
+
+  /// Bottom center
+  bottomCenter(7),
+
+  /// Bottom-right corner
+  bottomRight(8);
+
+  final int value;
+  const CropAnchor(this.value);
+}
+
+/// Crop aspect ratio modes
+enum CropAspectRatio {
+  /// 1:1 square crop (default) - crops to the largest square that fits
+  square(0),
+
+  /// Keep original aspect ratio - scales proportionally
+  original(1),
+
+  /// Custom aspect ratio - use [aspectRatioWidth] and [aspectRatioHeight]
+  custom(2);
+
+  final int value;
+  const CropAspectRatio(this.value);
+}
+
 class BicubicResizer {
   // ============================================================================
   // Raw pixel resize (sync)
@@ -34,7 +100,12 @@ class BicubicResizer {
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
   /// [filter] - Bicubic filter type (default: Catmull-Rom)
-  /// [crop] - Center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
+  /// [edgeMode] - How to handle pixels outside image bounds (default: clamp)
+  /// [crop] - Crop factor (0.0-1.0), 1.0 = no crop, 0.5 = 50%
+  /// [cropAnchor] - Position to anchor the crop (default: center)
+  /// [cropAspectRatio] - Aspect ratio mode for crop (default: square)
+  /// [aspectRatioWidth] - Custom aspect ratio width (only used with CropAspectRatio.custom)
+  /// [aspectRatioHeight] - Custom aspect ratio height (only used with CropAspectRatio.custom)
   ///
   /// Returns resized RGB pixel data
   static Uint8List resizeRgb({
@@ -44,7 +115,12 @@ class BicubicResizer {
     required int outputWidth,
     required int outputHeight,
     BicubicFilter filter = BicubicFilter.catmullRom,
+    EdgeMode edgeMode = EdgeMode.clamp,
     double crop = 1.0,
+    CropAnchor cropAnchor = CropAnchor.center,
+    CropAspectRatio cropAspectRatio = CropAspectRatio.square,
+    double aspectRatioWidth = 1.0,
+    double aspectRatioHeight = 1.0,
   }) {
     final expectedInputSize = inputWidth * inputHeight * 3;
     if (input.length != expectedInputSize) {
@@ -68,7 +144,12 @@ class BicubicResizer {
         outputWidth,
         outputHeight,
         filter.value,
+        edgeMode.value,
         crop,
+        cropAnchor.value,
+        cropAspectRatio.value,
+        aspectRatioWidth,
+        aspectRatioHeight,
       );
 
       if (result != 0) {
@@ -90,7 +171,12 @@ class BicubicResizer {
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
   /// [filter] - Bicubic filter type (default: Catmull-Rom)
-  /// [crop] - Center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
+  /// [edgeMode] - How to handle pixels outside image bounds (default: clamp)
+  /// [crop] - Crop factor (0.0-1.0), 1.0 = no crop, 0.5 = 50%
+  /// [cropAnchor] - Position to anchor the crop (default: center)
+  /// [cropAspectRatio] - Aspect ratio mode for crop (default: square)
+  /// [aspectRatioWidth] - Custom aspect ratio width (only used with CropAspectRatio.custom)
+  /// [aspectRatioHeight] - Custom aspect ratio height (only used with CropAspectRatio.custom)
   ///
   /// Returns resized RGBA pixel data
   static Uint8List resizeRgba({
@@ -100,7 +186,12 @@ class BicubicResizer {
     required int outputWidth,
     required int outputHeight,
     BicubicFilter filter = BicubicFilter.catmullRom,
+    EdgeMode edgeMode = EdgeMode.clamp,
     double crop = 1.0,
+    CropAnchor cropAnchor = CropAnchor.center,
+    CropAspectRatio cropAspectRatio = CropAspectRatio.square,
+    double aspectRatioWidth = 1.0,
+    double aspectRatioHeight = 1.0,
   }) {
     final expectedInputSize = inputWidth * inputHeight * 4;
     if (input.length != expectedInputSize) {
@@ -124,7 +215,12 @@ class BicubicResizer {
         outputWidth,
         outputHeight,
         filter.value,
+        edgeMode.value,
         crop,
+        cropAnchor.value,
+        cropAspectRatio.value,
+        aspectRatioWidth,
+        aspectRatioHeight,
       );
 
       if (result != 0) {
@@ -152,7 +248,13 @@ class BicubicResizer {
   /// [outputHeight] - Desired output height
   /// [quality] - JPEG output quality (1-100, default 95)
   /// [filter] - Bicubic filter type (default: Catmull-Rom)
-  /// [crop] - Center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
+  /// [edgeMode] - How to handle pixels outside image bounds (default: clamp)
+  /// [crop] - Crop factor (0.0-1.0), 1.0 = no crop, 0.5 = 50%
+  /// [cropAnchor] - Position to anchor the crop (default: center)
+  /// [cropAspectRatio] - Aspect ratio mode for crop (default: square)
+  /// [aspectRatioWidth] - Custom aspect ratio width (only used with CropAspectRatio.custom)
+  /// [aspectRatioHeight] - Custom aspect ratio height (only used with CropAspectRatio.custom)
+  /// [applyExifOrientation] - Whether to apply EXIF orientation (default: true)
   ///
   /// Returns resized JPEG encoded data
   static Uint8List resizeJpeg({
@@ -161,7 +263,13 @@ class BicubicResizer {
     required int outputHeight,
     int quality = 95,
     BicubicFilter filter = BicubicFilter.catmullRom,
+    EdgeMode edgeMode = EdgeMode.clamp,
     double crop = 1.0,
+    CropAnchor cropAnchor = CropAnchor.center,
+    CropAspectRatio cropAspectRatio = CropAspectRatio.square,
+    double aspectRatioWidth = 1.0,
+    double aspectRatioHeight = 1.0,
+    bool applyExifOrientation = true,
   }) {
     final inputPtr = calloc<Uint8>(jpegBytes.length);
     final outputDataPtr = calloc<Pointer<Uint8>>();
@@ -177,7 +285,13 @@ class BicubicResizer {
         outputHeight,
         quality,
         filter.value,
+        edgeMode.value,
         crop,
+        cropAnchor.value,
+        cropAspectRatio.value,
+        aspectRatioWidth,
+        aspectRatioHeight,
+        applyExifOrientation ? 1 : 0,
         outputDataPtr,
         outputSizePtr,
       );
@@ -219,7 +333,13 @@ class BicubicResizer {
   /// [outputWidth] - Desired output width
   /// [outputHeight] - Desired output height
   /// [filter] - Bicubic filter type (default: Catmull-Rom)
-  /// [crop] - Center crop factor (0.0-1.0), 1.0 = no crop, 0.5 = center 50%
+  /// [edgeMode] - How to handle pixels outside image bounds (default: clamp)
+  /// [crop] - Crop factor (0.0-1.0), 1.0 = no crop, 0.5 = 50%
+  /// [cropAnchor] - Position to anchor the crop (default: center)
+  /// [cropAspectRatio] - Aspect ratio mode for crop (default: square)
+  /// [aspectRatioWidth] - Custom aspect ratio width (only used with CropAspectRatio.custom)
+  /// [aspectRatioHeight] - Custom aspect ratio height (only used with CropAspectRatio.custom)
+  /// [compressionLevel] - PNG compression level (0-9, default 6, 0=none, 9=max)
   ///
   /// Returns resized PNG encoded data
   static Uint8List resizePng({
@@ -227,7 +347,13 @@ class BicubicResizer {
     required int outputWidth,
     required int outputHeight,
     BicubicFilter filter = BicubicFilter.catmullRom,
+    EdgeMode edgeMode = EdgeMode.clamp,
     double crop = 1.0,
+    CropAnchor cropAnchor = CropAnchor.center,
+    CropAspectRatio cropAspectRatio = CropAspectRatio.square,
+    double aspectRatioWidth = 1.0,
+    double aspectRatioHeight = 1.0,
+    int compressionLevel = 6,
   }) {
     final inputPtr = calloc<Uint8>(pngBytes.length);
     final outputDataPtr = calloc<Pointer<Uint8>>();
@@ -242,7 +368,13 @@ class BicubicResizer {
         outputWidth,
         outputHeight,
         filter.value,
+        edgeMode.value,
         crop,
+        cropAnchor.value,
+        cropAspectRatio.value,
+        aspectRatioWidth,
+        aspectRatioHeight,
+        compressionLevel,
         outputDataPtr,
         outputSizePtr,
       );

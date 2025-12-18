@@ -11,7 +11,9 @@ Fast, consistent bicubic image resizing for Flutter.
 - RGB and RGBA support
 - JPEG and PNG support with alpha channel preservation
 - **EXIF orientation support** - automatically rotates JPEG images correctly
-- **1:1 aspect ratio crop** - square center crop without stretching
+- **Flexible crop system** - anchor position, aspect ratio modes, custom ratios
+- **Edge handling modes** - clamp, wrap, reflect, zero
+- **PNG compression control** - adjustable compression level
 - Zero external Dart dependencies (only `ffi`)
 
 ## Installation
@@ -20,7 +22,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_bicubic_resize: ^1.2.1
+  flutter_bicubic_resize: ^1.2.2
 ```
 
 Or run:
@@ -51,6 +53,7 @@ final resized = BicubicResizer.resizePng(
   pngBytes: originalBytes,
   outputWidth: 224,
   outputHeight: 224,
+  compressionLevel: 6, // optional, 0-9 (default: 6)
 );
 ```
 
@@ -93,28 +96,116 @@ Available filters:
 - `BicubicFilter.cubicBSpline` - Smoother, more blurry.
 - `BicubicFilter.mitchell` - Balanced between sharp and smooth.
 
-### Center crop (1:1 aspect ratio)
+### Crop with anchor position
 
-The `crop` parameter extracts a **square region** from the center of the image, ensuring no stretching or distortion.
+Control where the crop is taken from:
 
 ```dart
-// Crop square from center, then resize to 224x224
-final cropped = BicubicResizer.resizeJpeg(
-  jpegBytes: originalBytes,
+// Crop from top of image (good for portraits)
+final portrait = BicubicResizer.resizeJpeg(
+  jpegBytes: photoBytes,
   outputWidth: 224,
   outputHeight: 224,
-  crop: 1.0, // Full square (min dimension)
+  crop: 0.8,
+  cropAnchor: CropAnchor.topCenter,
 );
 ```
 
-**How it works:**
+Available anchors:
+```
+┌─────────────────┐
+│ TL    TC    TR  │   topLeft, topCenter, topRight
+│                 │
+│ CL  CENTER  CR  │   centerLeft, center (default), centerRight
+│                 │
+│ BL    BC    BR  │   bottomLeft, bottomCenter, bottomRight
+└─────────────────┘
+```
 
-For an image 1920x1080:
-- `crop: 1.0` → crops 1080x1080 square from center
-- `crop: 0.8` → crops 864x864 square from center (80% of 1080)
-- `crop: 0.5` → crops 540x540 square from center (50% of 1080)
+### Crop aspect ratio modes
 
-The crop always uses the **minimum dimension** to ensure a perfect square without stretching.
+Control the shape of the crop:
+
+```dart
+// Square crop (default) - 1:1 aspect ratio
+final square = BicubicResizer.resizeJpeg(
+  jpegBytes: originalBytes,
+  outputWidth: 224,
+  outputHeight: 224,
+  cropAspectRatio: CropAspectRatio.square,
+);
+
+// Keep original proportions
+final proportional = BicubicResizer.resizeJpeg(
+  jpegBytes: originalBytes,
+  outputWidth: 800,
+  outputHeight: 600,
+  cropAspectRatio: CropAspectRatio.original,
+);
+
+// Custom aspect ratio (16:9)
+final widescreen = BicubicResizer.resizeJpeg(
+  jpegBytes: originalBytes,
+  outputWidth: 1920,
+  outputHeight: 1080,
+  cropAspectRatio: CropAspectRatio.custom,
+  aspectRatioWidth: 16.0,
+  aspectRatioHeight: 9.0,
+);
+```
+
+### Edge handling modes
+
+Control how pixels outside the image bounds are handled:
+
+```dart
+// Wrap mode - creates tiled pattern
+final tiled = BicubicResizer.resizeJpeg(
+  jpegBytes: textureBytes,
+  outputWidth: 512,
+  outputHeight: 512,
+  edgeMode: EdgeMode.wrap,
+);
+```
+
+Available modes:
+- `EdgeMode.clamp` - Default. Repeat edge pixels.
+- `EdgeMode.wrap` - Tile/repeat image (wrap around).
+- `EdgeMode.reflect` - Mirror reflection at edges.
+- `EdgeMode.zero` - Black/transparent pixels outside bounds.
+
+### EXIF orientation control
+
+For JPEG images, EXIF orientation is applied by default. You can disable it:
+
+```dart
+// Get raw pixel orientation (ignore EXIF)
+final raw = BicubicResizer.resizeJpeg(
+  jpegBytes: photoBytes,
+  outputWidth: 224,
+  outputHeight: 224,
+  applyExifOrientation: false,
+);
+```
+
+### Complete example with all options
+
+```dart
+final result = BicubicResizer.resizeJpeg(
+  jpegBytes: originalBytes,
+  outputWidth: 1920,
+  outputHeight: 1080,
+  quality: 90,
+  filter: BicubicFilter.catmullRom,
+  edgeMode: EdgeMode.clamp,
+  crop: 0.9,
+  cropAnchor: CropAnchor.center,
+  cropAspectRatio: CropAspectRatio.custom,
+  aspectRatioWidth: 16.0,
+  aspectRatioHeight: 9.0,
+  applyExifOrientation: true,
+);
+```
 
 ## Why?
 
@@ -129,9 +220,9 @@ This package uses the **same C code** on both platforms, ensuring **identical ou
 The entire image processing pipeline runs in native C code:
 
 1. **Decode** - stb_image decodes JPEG/PNG to raw pixels
-2. **EXIF orientation** - For JPEG: parses EXIF metadata and applies correct rotation/flip
-3. **Center crop** - Extracts square region from center (1:1 aspect ratio)
-4. **Resize** - stb_image_resize2 applies bicubic interpolation
+2. **EXIF orientation** - For JPEG: parses EXIF metadata and applies correct rotation/flip (optional)
+3. **Crop** - Extracts region based on anchor position and aspect ratio mode
+4. **Resize** - stb_image_resize2 applies bicubic interpolation with selected edge mode
 5. **Encode** - stb_image_write encodes back to JPEG/PNG
 
 This means:

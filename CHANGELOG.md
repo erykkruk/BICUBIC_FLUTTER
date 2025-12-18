@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.2] - 2025-12-18
+
+### Added
+- **Crop anchor positions** (`CropAnchor`) - crop from any position, not just center
+  - `center` (default), `topLeft`, `topCenter`, `topRight`, `centerLeft`, `centerRight`, `bottomLeft`, `bottomCenter`, `bottomRight`
+- **Crop aspect ratio modes** (`CropAspectRatio`) - control crop shape
+  - `square` (default) - 1:1 aspect ratio
+  - `original` - keep original image proportions
+  - `custom` - use custom aspect ratio with `aspectRatioWidth`/`aspectRatioHeight`
+- **Edge handling modes** (`EdgeMode`) - control how pixels outside bounds are handled
+  - `clamp` (default) - repeat edge pixels
+  - `wrap` - tile/repeat image
+  - `reflect` - mirror reflection at edges
+  - `zero` - black/transparent pixels outside
+- **JPEG EXIF control** (`applyExifOrientation`) - option to disable EXIF orientation correction
+- **PNG compression control** (`compressionLevel`) - adjust compression 0-9 (default: 6)
+
+### Changed
+- All new parameters are optional with backward-compatible defaults
+- Updated API documentation with comprehensive examples
+- Expanded README with new features and usage examples
+
 ## [1.2.1] - 2025-12-14
 
 ### Fixed
