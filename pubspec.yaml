@@ -9,11 +9,8 @@ documentation: https://github.com/erykkruk/BICUBIC_FLUTTER/blob/main/doc/api.md
 topics:
   - image
   - resize
-  - ffi
   - image-processing
-  - native
   - compress
-  - ml-image
   - crop
 
 funding:
