@@ -55,3 +55,5 @@ app.*.map.json
 *.g.dart
 *.freezed.dart
 /android/.cxx
+example/ios/Flutter/flutter_export_environment.sh
+example/ios/Flutter/Generated.xcconfig
