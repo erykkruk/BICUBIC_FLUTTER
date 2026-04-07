@@ -7,7 +7,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath 'com.android.tools.build:gradle:8.7.3'
     }
 }
 
@@ -21,14 +21,11 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    if (project.android.hasProperty("namespace")) {
-        namespace 'tech.ravenlab.bicubic_flutter'
-    }
-
-    compileSdkVersion 33
+    namespace 'tech.ravenlab.bicubic_flutter'
+    compileSdk 35
 
     defaultConfig {
-        minSdkVersion 21
+        minSdk 21
 
         externalNativeBuild {
             cmake {

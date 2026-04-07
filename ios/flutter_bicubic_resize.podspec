@@ -9,7 +9,7 @@ Pod::Spec.new do |s|
   s.source           = { :path => '.' }
   s.source_files     = 'Classes/**/*.swift', 'src/**/*.{h,c}'
   s.public_header_files = 'src/**/*.h'
-  s.platform         = :ios, '11.0'
+  s.platform         = :ios, '13.0'
   s.swift_version    = '5.0'
   s.static_framework = true
   # Build settings for the plugin target
