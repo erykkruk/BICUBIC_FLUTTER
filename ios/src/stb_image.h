@@ -4740,6 +4740,10 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
       stbi_uc *prior = filter_buf + (~j & 1)*img_width_bytes;
       stbi_uc *dest = a->out + stride*j;
       int nk = width * filter_bytes;
+      if (nk > img_width_bytes) {
+         all_ok = stbi__err("bad nk","Corrupt PNG");
+         break;
+      }
       int filter = *raw++;
 
       // check filter type
