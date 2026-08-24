@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.9.0] - 2026-08-24
+
+### Added
+- **ML normalization presets.** New `NormalizationPreset` enum bundles the four
+  values a model family expects from its input tensor (input size,
+  normalization formula, channel order, tensor layout) for `mobileNet`,
+  `resNet`, `efficientNet`, `yolo` and `openClip`. Read them through
+  `NormalizationPresetX` (`preset.inputSize`, `preset.mean`, `preset.std`,
+  `preset.layout`, `preset.tensorLength`, `preset.label`).
+- `BicubicResizer.resizeForModelPreset` and `resizeForModelPresetAsync` turn a
+  preset into a ready tensor in one call instead of six hand-tuned arguments.
+  `outputWidth`/`outputHeight` override the preset input size for model
+  variants trained at another resolution.
+- **Batch processing across isolates.** `BicubicResizer.resizeBatch`,
+  `resizeForModelBatch` and `resizeForModelPresetBatch` process a list of
+  images in parallel with an ordered result list, a `concurrency` cap
+  (defaulting to `defaultBatchConcurrency`, one isolate per core minus one)
+  and an `onProgress` callback fired on the calling isolate.
+
+### Changed
+- `ffi` constraint raised to `^2.2.0`.
+- `flutter_lints` raised to `^6.0.0`; the package analyzes clean under the
+  stricter rule set.
+
 ## [1.8.2] - 2026-07-10
 
 ### Changed

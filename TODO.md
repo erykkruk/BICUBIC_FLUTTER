@@ -7,17 +7,18 @@
 - [x] Return detailed error messages from native layer instead of generic `-1`
 - [x] Validate custom `mean`/`std` values in `resizeForModel()` (must not be zero for std)
 
-## v1.5.0 - ML Presets & Batch Processing
+## v1.9.0 - ML Presets & Batch Processing (shipped)
 
-- [ ] Add `NormalizationPreset` with ready-to-use configs: `mobileNet`, `resNet`, `efficientNet`, `yolo`, `openClip`
-- [ ] Add `resizeBatch()` for processing multiple images in parallel across isolates
-- [ ] Add `resizeForModelBatch()` for ML pipeline preprocessing
+- [x] Add `NormalizationPreset` with ready-to-use configs: `mobileNet`, `resNet`, `efficientNet`, `yolo`, `openClip`
+- [x] Add `resizeBatch()` for processing multiple images in parallel across isolates
+- [x] Add `resizeForModelBatch()` for ML pipeline preprocessing
+- [x] Add `resizeForModelPreset()` / `resizeForModelPresetBatch()` preset entry points
 
-## v1.6.0 - Format Utilities
+## Format Utilities (shipped)
 
-- [ ] Add `convertToJpeg()` / `convertToPng()` (format conversion without resize)
+- [x] Format conversion without resize, shipped as `jpegToPng()` / `pngToJpeg()` / `convertFormat()`
 - [ ] Add `decodeToRgb()` / `decodeToRgba()` (decode without resize)
-- [ ] Add `getImageInfo()` returning width, height, format, EXIF orientation without full decode
+- [x] Add `getImageInfo()` returning width, height, format, EXIF orientation without full decode
 
 ## v2.0.0 - Web & New Platforms
 

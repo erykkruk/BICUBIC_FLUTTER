@@ -24,6 +24,8 @@ Full hosted documentation lives on codigee.com:
 - **Edge handling modes** - clamp, wrap, reflect, zero
 - **PNG compression control** - adjustable compression level
 - **ML preprocessing** - tensor normalization (ImageNet, centered, custom), HWC/CHW layouts, RGB/BGR ordering
+- **ML model presets** - `mobileNet`, `resNet`, `efficientNet`, `yolo`, `openClip` in one argument
+- **Batch processing** - resize whole lists in parallel across isolates, with progress reporting
 - **Async wrappers** - all methods available as `*Async()` variants using `Isolate.run()`
 - **Specific error codes** - descriptive `BicubicResizeException` with native error mapping
 - **Image info** - read dimensions, format, and EXIF orientation without decoding pixels
@@ -254,6 +256,90 @@ Available normalizations:
 Available layouts:
 - `TensorLayout.hwc` - Height, Width, Channels (TensorFlow/TFLite)
 - `TensorLayout.chw` - Channels, Height, Width (PyTorch)
+
+### ML model presets
+
+Instead of hand-wiring the normalization, layout and input size for a model
+family, pass a preset:
+
+```dart
+// MobileNet: 224x224, [-1, 1] centered, RGB, HWC - all from the preset
+final Float32List tensor = BicubicResizer.resizeForModelPreset(
+  bytes: imageBytes,
+  preset: NormalizationPreset.mobileNet,
+);
+
+// Off the UI thread
+final tensor = await BicubicResizer.resizeForModelPresetAsync(
+  bytes: imageBytes,
+  preset: NormalizationPreset.openClip,
+);
+
+// Model variant trained at another resolution (EfficientNet-B4)
+final tensor = BicubicResizer.resizeForModelPreset(
+  bytes: imageBytes,
+  preset: NormalizationPreset.efficientNet,
+  outputWidth: 380,
+  outputHeight: 380,
+);
+```
+
+| Preset | Input | Normalization | Layout |
+|---|---|---|---|
+| `NormalizationPreset.mobileNet` | 224x224 | centered, [-1, 1] | HWC |
+| `NormalizationPreset.resNet` | 224x224 | ImageNet mean/std | CHW |
+| `NormalizationPreset.efficientNet` | 224x224 | ImageNet mean/std | CHW |
+| `NormalizationPreset.yolo` | 640x640 | simple, [0, 1] | CHW |
+| `NormalizationPreset.openClip` | 224x224 | CLIP mean/std | CHW |
+
+Every preset exposes its values, so they can be read without running a resize:
+
+```dart
+const preset = NormalizationPreset.yolo;
+print(preset.inputSize);     // 640
+print(preset.tensorLength);  // 640 * 640 * 3
+print(preset.mean);          // [0.0, 0.0, 0.0]
+print(preset.label);         // YOLO
+```
+
+All presets are RGB. BGR models still need an explicit `channelOrder` on
+`resizeForModel`.
+
+### Batch processing
+
+Process a whole list of images in parallel across isolates. Results keep the
+input order no matter which image finishes first:
+
+```dart
+// Thumbnails, with a progress bar
+final List<Uint8List> thumbnails = await BicubicResizer.resizeBatch(
+  images: pickedFiles,
+  outputWidth: 512,
+  outputHeight: 512,
+  onProgress: (done, total) => setState(() => _progress = done / total),
+);
+
+// A batch of model tensors, straight from a preset
+final List<Float32List> tensors =
+    await BicubicResizer.resizeForModelPresetBatch(
+  images: frames,
+  preset: NormalizationPreset.yolo,
+);
+
+// Full control over the preprocessing
+final tensors = await BicubicResizer.resizeForModelBatch(
+  images: frames,
+  outputWidth: 224,
+  outputHeight: 224,
+  normalization: NormalizationType.imageNet,
+  layout: TensorLayout.chw,
+  concurrency: 4,
+);
+```
+
+`concurrency` defaults to `BicubicResizer.defaultBatchConcurrency` (one isolate
+per CPU core minus one, so the UI isolate keeps a core). Batches are fail-fast:
+the first image that fails completes the future with its exception.
 
 ### Fit within bounds (preserve aspect ratio)
 
