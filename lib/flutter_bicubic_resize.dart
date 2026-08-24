@@ -44,3 +44,4 @@
 library;
 
 export 'src/bicubic_resizer.dart';
+export 'src/normalization_preset.dart';
