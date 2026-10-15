@@ -15,6 +15,7 @@
 #include "stb_image_resize2.h"
 #include "resize.h"
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -55,8 +56,12 @@ static int parse_exif_orientation(const uint8_t* data, int size) {
             int segment_length = (data[offset + 2] << 8) | data[offset + 3];
             int segment_start = offset + 4;
 
+            // IFD0 lives inside the APP1 segment; never read past it or the buffer.
+            int segment_end = offset + 2 + segment_length;
+            if (segment_end > size) segment_end = size;
+
             // Check for "Exif\0\0" identifier
-            if (segment_start + 6 > size) return 1;
+            if (segment_start + 6 > segment_end) return 1;
             if (data[segment_start] != 'E' || data[segment_start + 1] != 'x' ||
                 data[segment_start + 2] != 'i' || data[segment_start + 3] != 'f' ||
                 data[segment_start + 4] != 0 || data[segment_start + 5] != 0) {
@@ -64,7 +69,7 @@ static int parse_exif_orientation(const uint8_t* data, int size) {
             }
 
             int tiff_start = segment_start + 6;
-            if (tiff_start + 8 > size) return 1;
+            if (tiff_start + 8 > segment_end) return 1;
 
             // Check byte order (II = little endian, MM = big endian)
             int little_endian = (data[tiff_start] == 'I' && data[tiff_start + 1] == 'I');
@@ -74,15 +79,17 @@ static int parse_exif_orientation(const uint8_t* data, int size) {
             // Read IFD0 offset
             uint32_t ifd_offset;
             if (little_endian) {
-                ifd_offset = data[tiff_start + 4] | (data[tiff_start + 5] << 8) |
-                            (data[tiff_start + 6] << 16) | (data[tiff_start + 7] << 24);
+                ifd_offset = (uint32_t)data[tiff_start + 4] | ((uint32_t)data[tiff_start + 5] << 8) |
+                            ((uint32_t)data[tiff_start + 6] << 16) | ((uint32_t)data[tiff_start + 7] << 24);
             } else {
-                ifd_offset = (data[tiff_start + 4] << 24) | (data[tiff_start + 5] << 16) |
-                            (data[tiff_start + 6] << 8) | data[tiff_start + 7];
+                ifd_offset = ((uint32_t)data[tiff_start + 4] << 24) | ((uint32_t)data[tiff_start + 5] << 16) |
+                            ((uint32_t)data[tiff_start + 6] << 8) | (uint32_t)data[tiff_start + 7];
             }
 
-            int ifd_start = tiff_start + ifd_offset;
-            if (ifd_start + 2 > size) return 1;
+            // The offset is untrusted: compare it unsigned so a huge value cannot
+            // wrap ifd_start negative and read before the buffer.
+            if (ifd_offset > (uint32_t)(segment_end - tiff_start - 2)) return 1;
+            int ifd_start = tiff_start + (int)ifd_offset;
 
             // Read number of directory entries
             uint16_t num_entries;
@@ -96,7 +103,7 @@ static int parse_exif_orientation(const uint8_t* data, int size) {
             int entry_start = ifd_start + 2;
             for (int i = 0; i < num_entries; i++) {
                 int entry_offset = entry_start + i * 12;
-                if (entry_offset + 12 > size) return 1;
+                if (entry_offset + 12 > segment_end) return 1;
 
                 uint16_t tag;
                 if (little_endian) {
@@ -209,6 +216,21 @@ static float clamp_crop(float crop) {
     if (crop < 0.01f) return 0.01f;  // Minimum 1%
     if (crop > 1.0f) return 1.0f;
     return crop;
+}
+
+// ============================================================================
+// Helper: guard pixel buffer sizes against int overflow
+// ============================================================================
+
+// Buffer sizes are computed as int. Without this check a large output size
+// wraps to a small allocation that stbir_resize then writes past.
+static int pixel_buffer_fits(int width, int height, int channels) {
+    return (int64_t)width * height * channels <= INT_MAX;
+}
+
+static int encode_capacity(int width, int height, int channels, int factor) {
+    int64_t capacity = (int64_t)width * height * channels * factor;
+    return capacity > INT_MAX ? INT_MAX : (int)capacity;
 }
 
 // ============================================================================
@@ -373,6 +395,10 @@ FFI_EXPORT int bicubic_resize_rgb(
     if (input_width <= 0 || input_height <= 0 || output_width <= 0 || output_height <= 0) {
         return BICUBIC_ERROR_INVALID_DIMS;
     }
+    if (!pixel_buffer_fits(input_width, input_height, 3) ||
+        !pixel_buffer_fits(output_width, output_height, 3)) {
+        return BICUBIC_ERROR_INVALID_DIMS;
+    }
 
     // Calculate crop region
     int crop_x, crop_y, crop_width, crop_height;
@@ -382,7 +408,7 @@ FFI_EXPORT int bicubic_resize_rgb(
     // Get pointer to start of cropped region
     const uint8_t* crop_start = input + (crop_y * input_width + crop_x) * 3;
 
-    stbir_resize(
+    void* resized = stbir_resize(
         crop_start,
         crop_width,
         crop_height,
@@ -397,7 +423,7 @@ FFI_EXPORT int bicubic_resize_rgb(
         get_stbir_filter(filter)
     );
 
-    return BICUBIC_SUCCESS;
+    return resized != NULL ? BICUBIC_SUCCESS : BICUBIC_ERROR_ALLOC_FAILED;
 }
 
 FFI_EXPORT int bicubic_resize_rgba(
@@ -421,6 +447,10 @@ FFI_EXPORT int bicubic_resize_rgba(
     if (input_width <= 0 || input_height <= 0 || output_width <= 0 || output_height <= 0) {
         return BICUBIC_ERROR_INVALID_DIMS;
     }
+    if (!pixel_buffer_fits(input_width, input_height, 4) ||
+        !pixel_buffer_fits(output_width, output_height, 4)) {
+        return BICUBIC_ERROR_INVALID_DIMS;
+    }
 
     // Calculate crop region
     int crop_x, crop_y, crop_width, crop_height;
@@ -430,7 +460,7 @@ FFI_EXPORT int bicubic_resize_rgba(
     // Get pointer to start of cropped region
     const uint8_t* crop_start = input + (crop_y * input_width + crop_x) * 4;
 
-    stbir_resize(
+    void* resized = stbir_resize(
         crop_start,
         crop_width,
         crop_height,
@@ -445,7 +475,7 @@ FFI_EXPORT int bicubic_resize_rgba(
         get_stbir_filter(filter)
     );
 
-    return BICUBIC_SUCCESS;
+    return resized != NULL ? BICUBIC_SUCCESS : BICUBIC_ERROR_ALLOC_FAILED;
 }
 
 // ============================================================================
@@ -456,19 +486,54 @@ typedef struct {
     uint8_t* data;
     int size;
     int capacity;
+    int failed;
 } WriteContext;
 
 static void write_func(void* context, void* data, int size) {
     WriteContext* ctx = (WriteContext*)context;
+    if (ctx->failed) return;
 
-    // Grow buffer if needed
-    while (ctx->size + size > ctx->capacity) {
-        ctx->capacity = ctx->capacity * 2;
-        ctx->data = (uint8_t*)realloc(ctx->data, ctx->capacity);
+    int64_t required = (int64_t)ctx->size + size;
+    if (required > INT_MAX) {
+        ctx->failed = 1;
+        return;
+    }
+
+    // Grow buffer if needed, keeping the old one if realloc fails
+    if (required > ctx->capacity) {
+        int64_t new_capacity = (int64_t)ctx->capacity * 2;
+        if (new_capacity < required) new_capacity = required;
+        if (new_capacity > INT_MAX) new_capacity = INT_MAX;
+
+        uint8_t* grown = (uint8_t*)realloc(ctx->data, (size_t)new_capacity);
+        if (grown == NULL) {
+            ctx->failed = 1;
+            return;
+        }
+        ctx->data = grown;
+        ctx->capacity = (int)new_capacity;
     }
 
     memcpy(ctx->data + ctx->size, data, size);
     ctx->size += size;
+}
+
+// Hands the encoded buffer to the caller, or frees it and maps the failure.
+static int finish_write(WriteContext* ctx, int encode_result, uint8_t** output_data, int* output_size) {
+    if (ctx->failed) {
+        free(ctx->data);
+        return BICUBIC_ERROR_ALLOC_FAILED;
+    }
+    if (encode_result == 0) {
+        free(ctx->data);
+        return BICUBIC_ERROR_ENCODE_FAILED;
+    }
+
+    // Shrink buffer to actual size; a failed shrink still leaves a valid buffer
+    uint8_t* shrunk = (uint8_t*)realloc(ctx->data, ctx->size);
+    *output_data = (shrunk != NULL) ? shrunk : ctx->data;
+    *output_size = ctx->size;
+    return BICUBIC_SUCCESS;
 }
 
 // ============================================================================
@@ -496,6 +561,9 @@ FFI_EXPORT int bicubic_resize_jpeg(
         return BICUBIC_ERROR_NULL_INPUT;
     }
     if (input_size <= 0 || output_width <= 0 || output_height <= 0) {
+        return BICUBIC_ERROR_INVALID_DIMS;
+    }
+    if (!pixel_buffer_fits(output_width, output_height, 3)) {
         return BICUBIC_ERROR_INVALID_DIMS;
     }
     if (quality < 1) quality = 1;
@@ -540,7 +608,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
     }
 
     // Resize using selected filter (from cropped region)
-    stbir_resize(
+    void* resized = stbir_resize(
         crop_start,
         crop_width,
         crop_height,
@@ -557,10 +625,16 @@ FFI_EXPORT int bicubic_resize_jpeg(
 
     free(src_pixels);
 
+    if (resized == NULL) {
+        free(dst_pixels);
+        return BICUBIC_ERROR_ALLOC_FAILED;
+    }
+
     // Encode to JPEG
     WriteContext ctx;
     ctx.capacity = output_width * output_height * 3;  // Initial estimate
     ctx.size = 0;
+    ctx.failed = 0;
     ctx.data = (uint8_t*)malloc(ctx.capacity);
 
     if (ctx.data == NULL) {
@@ -576,16 +650,7 @@ FFI_EXPORT int bicubic_resize_jpeg(
 
     free(dst_pixels);
 
-    if (result == 0) {
-        free(ctx.data);
-        return BICUBIC_ERROR_ENCODE_FAILED;
-    }
-
-    // Shrink buffer to actual size
-    *output_data = (uint8_t*)realloc(ctx.data, ctx.size);
-    *output_size = ctx.size;
-
-    return BICUBIC_SUCCESS;
+    return finish_write(&ctx, result, output_data, output_size);
 }
 
 // ============================================================================
@@ -617,6 +682,9 @@ FFI_EXPORT int bicubic_resize_png(
     if (input_size <= 0 || output_width <= 0 || output_height <= 0) {
         return BICUBIC_ERROR_INVALID_DIMS;
     }
+    if (!pixel_buffer_fits(output_width, output_height, 3)) {
+        return BICUBIC_ERROR_INVALID_DIMS;
+    }
 
     // Clamp compression level to valid range (0-9)
     if (compression_level < 0) compression_level = 0;
@@ -636,6 +704,10 @@ FFI_EXPORT int bicubic_resize_png(
 
     // Use 4 channels (RGBA) for PNG to preserve transparency
     int channels = (src_channels >= 4) ? 4 : 3;
+    if (!pixel_buffer_fits(output_width, output_height, channels)) {
+        stbi_image_free(src_pixels);
+        return BICUBIC_ERROR_INVALID_DIMS;
+    }
 
     // If we need to convert to RGBA
     if (src_channels != channels) {
@@ -667,7 +739,7 @@ FFI_EXPORT int bicubic_resize_png(
     }
 
     // Resize using selected filter (from cropped region)
-    stbir_resize(
+    void* resized = stbir_resize(
         crop_start,
         crop_width,
         crop_height,
@@ -684,13 +756,19 @@ FFI_EXPORT int bicubic_resize_png(
 
     stbi_image_free(src_pixels);
 
+    if (resized == NULL) {
+        free(dst_pixels);
+        return BICUBIC_ERROR_ALLOC_FAILED;
+    }
+
     // Set PNG compression level
     stbi_write_png_compression_level = compression_level;
 
     // Encode to PNG
     WriteContext ctx;
-    ctx.capacity = output_width * output_height * channels * 2;  // Initial estimate (PNG is compressed)
+    ctx.capacity = encode_capacity(output_width, output_height, channels, 2);  // Initial estimate (PNG is compressed)
     ctx.size = 0;
+    ctx.failed = 0;
     ctx.data = (uint8_t*)malloc(ctx.capacity);
 
     if (ctx.data == NULL) {
@@ -706,16 +784,7 @@ FFI_EXPORT int bicubic_resize_png(
 
     free(dst_pixels);
 
-    if (result == 0) {
-        free(ctx.data);
-        return BICUBIC_ERROR_ENCODE_FAILED;
-    }
-
-    // Shrink buffer to actual size
-    *output_data = (uint8_t*)realloc(ctx.data, ctx.size);
-    *output_size = ctx.size;
-
-    return BICUBIC_SUCCESS;
+    return finish_write(&ctx, result, output_data, output_size);
 }
 
 // ============================================================================
@@ -743,6 +812,9 @@ FFI_EXPORT int bicubic_resize_to_rgb(
         return BICUBIC_ERROR_NULL_INPUT;
     }
     if (input_size <= 0 || output_width <= 0 || output_height <= 0) {
+        return BICUBIC_ERROR_INVALID_DIMS;
+    }
+    if (!pixel_buffer_fits(output_width, output_height, 3)) {
         return BICUBIC_ERROR_INVALID_DIMS;
     }
 
@@ -786,7 +858,7 @@ FFI_EXPORT int bicubic_resize_to_rgb(
     }
 
     // Resize using selected filter (from cropped region)
-    stbir_resize(
+    void* resized = stbir_resize(
         crop_start,
         crop_width,
         crop_height,
@@ -802,6 +874,11 @@ FFI_EXPORT int bicubic_resize_to_rgb(
     );
 
     free(src_pixels);
+
+    if (resized == NULL) {
+        free(dst_pixels);
+        return BICUBIC_ERROR_ALLOC_FAILED;
+    }
 
     // Return raw RGB data (no encoding)
     *output_data = dst_pixels;
@@ -915,8 +992,9 @@ FFI_EXPORT int bicubic_jpeg_to_png(
 
     // Encode to PNG
     WriteContext ctx;
-    ctx.capacity = width * height * 3 * 2;
+    ctx.capacity = encode_capacity(width, height, 3, 2);
     ctx.size = 0;
+    ctx.failed = 0;
     ctx.data = (uint8_t*)malloc(ctx.capacity);
     if (ctx.data == NULL) {
         free(pixels);
@@ -931,15 +1009,7 @@ FFI_EXPORT int bicubic_jpeg_to_png(
 
     free(pixels);
 
-    if (result == 0) {
-        free(ctx.data);
-        return BICUBIC_ERROR_ENCODE_FAILED;
-    }
-
-    *output_data = (uint8_t*)realloc(ctx.data, ctx.size);
-    *output_size = ctx.size;
-
-    return BICUBIC_SUCCESS;
+    return finish_write(&ctx, result, output_data, output_size);
 }
 
 // ============================================================================
@@ -977,6 +1047,7 @@ FFI_EXPORT int bicubic_png_to_jpeg(
     WriteContext ctx;
     ctx.capacity = width * height * 3;
     ctx.size = 0;
+    ctx.failed = 0;
     ctx.data = (uint8_t*)malloc(ctx.capacity);
     if (ctx.data == NULL) {
         free(pixels);
@@ -991,15 +1062,7 @@ FFI_EXPORT int bicubic_png_to_jpeg(
 
     free(pixels);
 
-    if (result == 0) {
-        free(ctx.data);
-        return BICUBIC_ERROR_ENCODE_FAILED;
-    }
-
-    *output_data = (uint8_t*)realloc(ctx.data, ctx.size);
-    *output_size = ctx.size;
-
-    return BICUBIC_SUCCESS;
+    return finish_write(&ctx, result, output_data, output_size);
 }
 
 // ============================================================================
