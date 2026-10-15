@@ -486,6 +486,18 @@ void main() {
       }
     });
 
+    test('invalidDims description covers oversized buffers', () {
+      // Arrange
+      const error = BicubicNativeError.invalidDims;
+
+      // Act
+      final exception = BicubicResizeException(error.code);
+
+      // Assert
+      expect(error.description, contains('too large'));
+      expect(exception.toString(), contains('too large'));
+    });
+
     test('fromCode returns correct enum for all known codes', () {
       expect(
         BicubicNativeError.fromCode(-1),

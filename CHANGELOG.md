@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.9.1] - 2026-10-15
+
+### Fixed
+- **Heap overflow on very large output sizes.** Native buffer sizes were
+  computed as `int`, so an output such as 40000x40000 wrapped to a small
+  allocation that the resizer then wrote past. Every native entry point now
+  rejects pixel buffers larger than 2^31 - 1 bytes with `invalidDims`.
+- **Out-of-bounds read on malformed EXIF.** A JPEG whose EXIF IFD offset was
+  huge (for example `0x80000000`) made the orientation parser read before the
+  input buffer and crash. The offset is now bounds-checked and parsing stays
+  inside the APP1 segment; bad EXIF falls back to normal orientation.
+- Allocation failures inside the JPEG/PNG encoder or the resizer are reported
+  as `allocFailed` instead of crashing on a `NULL` buffer or returning
+  success with an unfilled output.
+
+### Added
+- Native C regression tests (`test/native/resize_test.c`) built with
+  AddressSanitizer in CI.
+
 ## [1.9.0] - 2026-08-24
 
 ### Added

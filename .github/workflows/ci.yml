@@ -30,3 +30,20 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+  native:
+    name: Native C tests (ASan)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build native tests with sanitizers
+        run: >-
+          gcc -std=c99 -g -O1
+          -fsanitize=address,signed-integer-overflow -fno-sanitize-recover=all
+          -Isrc src/resize.c test/native/resize_test.c -lm
+          -o "$RUNNER_TEMP/resize_test"
+
+      - name: Run native tests
+        run: $RUNNER_TEMP/resize_test

@@ -24,5 +24,20 @@ linter:
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 
+analyzer:
+  # Kept in sync with Flutter's AnalysisOptionsMigration, which otherwise
+  # rewrites this file during `flutter pub get` and leaves the tree dirty
+  # for `pub publish --dry-run`. Covers every platform directory the
+  # migration can ask for, not just the ones this package has today, so
+  # adding a platform later cannot silently break the release workflow.
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

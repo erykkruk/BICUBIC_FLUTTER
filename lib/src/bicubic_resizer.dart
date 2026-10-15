@@ -192,8 +192,12 @@ enum BicubicNativeError {
   /// Null pointer passed as input, output, or size parameter.
   nullInput(-1, 'Null pointer passed to native function'),
 
-  /// Invalid dimensions (width or height <= 0, or input_size <= 0).
-  invalidDims(-2, 'Invalid dimensions (width, height, or size <= 0)'),
+  /// Invalid dimensions (width or height <= 0, input_size <= 0, or a pixel
+  /// buffer larger than 2^31 - 1 bytes).
+  invalidDims(
+    -2,
+    'Invalid dimensions (width, height, or size <= 0, or buffer too large)',
+  ),
 
   /// Image decoding failed (corrupt or unsupported data).
   decodeFailed(-3, 'Image decoding failed (corrupt or unsupported data)'),
